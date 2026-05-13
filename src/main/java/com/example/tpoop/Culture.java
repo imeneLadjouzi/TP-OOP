@@ -1,17 +1,32 @@
 package com.example.tpoop;
 
 import java.util.Map;
-public class Culture extends ZoneCulture{
+public class Culture {
     private String DatePlantation;
     private String DateRecolte;
-    //private StadeCroissance stadeCroiss;
+    private StadeCroissance StadeCroiss;
+    private ExigPedologiques ExigPed;
 
-    private Map<int[], int[]> ExigencesPedolog;
-    public Culture(String code, String name, String status, String DatePlantation, String DateRecolte, StadeCroissance stadeCroiss, Map<int[], int[]> ExigencesPedolog) {
-        super(code, name, status);
-        this.DatePlantation = DatePlantation;
-        this.DateRecolte = DateRecolte;
-        //this.stadeCroiss = stadeCroiss;
-        this.ExigencesPedolog = ExigencesPedolog;
+
+    public Culture(String datePlantation, String dateRecolte, StadeCroissance stadeCroiss, ExigPedologiques exigPed) {
+        this.DatePlantation = datePlantation;
+        this.DateRecolte = dateRecolte;
+        this.StadeCroiss = stadeCroiss;
+        this.ExigPed = exigPed;
+    }
+    public StadeCroissance getStadeCroiss(){
+        return StadeCroiss;
+    }
+    public void updateStadeCroiss(StadeCroissance s){
+        StadeCroiss = s;
+    }
+    public void displayStadeCroiss(){
+        System.out.println("Stade de croissance: "+ StadeCroiss);
+    }
+
+    public void display(){
+        System.out.println("Date de plantation: "+DatePlantation);
+        System.out.println("Date de recolte: "+DateRecolte);
+        displayStadeCroiss();
     }
 }
