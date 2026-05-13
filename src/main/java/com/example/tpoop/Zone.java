@@ -1,55 +1,60 @@
 package com.example.tpoop;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public abstract class Zone implements Suspendable{
+public abstract class Zone implements Suspendable {
     protected String code;
     protected String name;
     protected Status status;
-    protected Prod production;
-    //protected LimGeo to ask her the coordinates of the zone
-    public ArrayList<Capteurs> capteurs;
+    protected List<Prod> productions;
+    protected List<Capteurs> capteurs;
 
-    public Zone (String code, String name, Status status){
+    abstract public String genererCode();
+
+    public Zone(String name, Status status) {
         this.name = name;
-        this.code = code;
-        this.status=status;
+        this.code = this.genererCode();
+        this.status = status;
+        this.productions = new ArrayList<>();
+        this.capteurs = new ArrayList<>();
     }
-    public void display(){
-        System.out.println("Zone: "+name+" code: "+code+"Status: "+status);
+
+    public void display() {
+        System.out.println("Zone: " + name + " | Code: " + code + " | Statut: " + status);
     }
+
     public void suspendre() {
         this.status = Status.SUSPENDU;
     }
+
     public void reactiver() {
         this.status = Status.ACTIF;
     }
 
-    public void setCode(String code) {
-        this.code=code;
+    public void ajouterCapteur(Capteurs c) {
+        capteurs.add(c);
     }
-    public void setName(String name){
-        this.name = name;
+
+    public void supprimerCapteur(String code) {
+        capteurs.removeIf(c -> c.getCode().equals(code));
     }
-    public void setStatus(Status status){
+
+    @Override
+    public void setStatus(Status status) {
         this.status = status;
     }
-    public String getCode(){
-        return code;
+
+    public void setCode(String code) { this.code = code; }
+    public void setName(String name) { this.name = name; }
+
+    public String getCode() { return code; }
+    public String getName() { return name; }
+    public Status getStatus() { return status; }
+    public List<Capteurs> getCapteurs() { return capteurs; }
+    public List<Prod> getProductions() { return productions; }
+
+    public void enregistrerProduction(Prod p) {
+        productions.add(p);
     }
-    public String getName(){
-        return name;
-    }
-
-    public Status getStatus(){
-        return status;
-    }
-
-    public void enregistrerProduction(Prod p){
-        production = p;
-    }
-
-    //public abstract void suspendCapteurs();
-
-
 }

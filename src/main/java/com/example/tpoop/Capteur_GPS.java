@@ -1,16 +1,29 @@
 package com.example.tpoop;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-public class Capteur_GPS extends Capteurs{
-    private Object position_geo; //coordonnés
-    public Capteur_GPS(String code, Object location, Status status, Object position_geo) {
-        super(code, location,  status);
-        this.position_geo = position_geo;
+public class Capteur_GPS extends Capteurs {
+    private PositionGeographique position;
+
+    public Capteur_GPS(String code, Zone location, Status status, PositionGeographique position) {
+        super(code, location, status);
+        this.position = position;
     }
-    public Map<String, Object> send_values(){
+
+    public void updatePosition(PositionGeographique nouvellePosition) {
+        this.position = nouvellePosition;
+    }
+
+    @Override
+    public Map<String, Object> send_values() {
         Map<String, Object> map = new HashMap<>();
-        map.put("position_géo", position_geo);
+        map.put("latitude", position.getLatitude());
+        map.put("longitude", position.getLongitude());
         return map;
+    }
+
+    public PositionGeographique getPosition() {
+        return position;
     }
 }

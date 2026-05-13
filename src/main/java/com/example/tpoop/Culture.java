@@ -1,32 +1,41 @@
 package com.example.tpoop;
 
-import java.util.Map;
 public class Culture {
-    private String DatePlantation;
-    private String DateRecolte;
-    private StadeCroissance StadeCroiss;
-    private ExigPedologiques ExigPed;
+    private String nom;
+    private String datePlantation;
+    private String dateRecolte;
+    private StadeCroissance stadeCroiss;
+    private ExigPedologiques exigPed;
 
-
-    public Culture(String datePlantation, String dateRecolte, StadeCroissance stadeCroiss, ExigPedologiques exigPed) {
-        this.DatePlantation = datePlantation;
-        this.DateRecolte = dateRecolte;
-        this.StadeCroiss = stadeCroiss;
-        this.ExigPed = exigPed;
-    }
-    public StadeCroissance getStadeCroiss(){
-        return StadeCroiss;
-    }
-    public void updateStadeCroiss(StadeCroissance s){
-        StadeCroiss = s;
-    }
-    public void displayStadeCroiss(){
-        System.out.println("Stade de croissance: "+ StadeCroiss);
+    public Culture(String nom, String datePlantation, String dateRecolte,
+                   StadeCroissance stadeCroiss, ExigPedologiques exigPed) {
+        this.nom = nom;
+        this.datePlantation = datePlantation;
+        this.dateRecolte = dateRecolte;
+        this.stadeCroiss = stadeCroiss;
+        this.exigPed = exigPed;
     }
 
-    public void display(){
-        System.out.println("Date de plantation: "+DatePlantation);
-        System.out.println("Date de recolte: "+DateRecolte);
+    public String getNom() { return nom; }
+    public String getDatePlantation() { return datePlantation; }
+    public String getDateRecolte() { return dateRecolte; }
+    public StadeCroissance getStadeCroiss() { return stadeCroiss; }
+    public ExigPedologiques getExigPed() { return exigPed; }
+
+    public void updateStadeCroiss(StadeCroissance s) {
+        this.stadeCroiss = s;
+    }
+
+    public void displayStadeCroiss() {
+        System.out.println("  Stade de croissance de [" + nom + "]: " + stadeCroiss);
+    }
+
+    public void display() {
+        System.out.println("  Culture : " + nom);
+        System.out.println("  Date de plantation : " + datePlantation);
+        System.out.println("  Date de recolte    : " + dateRecolte);
         displayStadeCroiss();
+        if (exigPed != null)
+            System.out.println("  Exigences : " + exigPed);
     }
 }

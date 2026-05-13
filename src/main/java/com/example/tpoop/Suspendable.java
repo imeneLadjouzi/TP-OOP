@@ -1,5 +1,5 @@
 package com.example.tpoop;
 
 public interface Suspendable {
-    public abstract void setStatus(Status status);
+    void setStatus(Status status);
 }

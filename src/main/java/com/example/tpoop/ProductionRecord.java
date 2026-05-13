@@ -7,24 +7,29 @@ public class ProductionRecord {
     private TypeProd type;
     private List<Double> records;
 
-    public ProductionRecord(TypeProd var1) {
-        this.type = var1;
-        this.records = new ArrayList();
+    public ProductionRecord(TypeProd type) {
+        this.type = type;
+        this.records = new ArrayList<>();
     }
 
-    public void record(double var1) {
-        this.records.add(var1);
+    public void record(double val) {
+        records.add(val);
     }
 
     public double getLatest() {
-        return this.records.isEmpty() ? (double)0.0F : (Double)this.records.get(this.records.size() - 1);
+        return records.isEmpty() ? 0.0 : records.get(records.size() - 1);
     }
 
-    public TypeProd getType() {
-        return this.type;
+    public double getTotal() {
+        return records.stream().mapToDouble(Double::doubleValue).sum();
     }
 
-    public List<Double> getHistory() {
-        return this.records;
+    public TypeProd getType() { return type; }
+    public List<Double> getHistory() { return records; }
+
+    public void display() {
+        System.out.println("  Production (" + type + ") : dernier=" + getLatest()
+                + " " + type.getUnite() + " | total=" + getTotal() + " " + type.getUnite()
+                + " | nb releves=" + records.size());
     }
 }

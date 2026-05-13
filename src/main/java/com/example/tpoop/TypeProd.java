@@ -4,12 +4,15 @@ public enum TypeProd {
         LAIT("L"),
         OEUFS("Egg"),
         POIDS_RECOLTE("Kg"),
-        RENDEM_CULTURE("Kg");
+        RENDEM_CULTURE("Kg/ha");
 
-        private String unite;
+        private final String unite;
 
-        private TypeProd(String var3) {
-            this.unite = var3;
+        TypeProd(String unite) {
+                this.unite = unite;
+        }
+
+        public String getUnite() {
+                return unite;
         }
 }
-
