@@ -2,10 +2,10 @@ package com.example.tpoop;
 
 import java.util.Map;
 
-abstract public class Capteur_num extends Capteurs{
-    public Capteur_num(String code, Object location, Status status) {
+public abstract class Capteur_num extends Capteurs {
+    public Capteur_num(String code, Zone location, Status status) {
         super(code, location, status);
     }
 
-    abstract public Map<String, Object> send_values();
+    public abstract Map<String, Object> send_values();
 }

@@ -1,17 +1,24 @@
 package com.example.tpoop;
 
 public class PositionGeographique {
-    private int latitude;
-    private int longitude;
-    public void PositionGeographique(int latitude, int longitude){;
+    private double latitude;
+    private double longitude;
+
+    public PositionGeographique(double latitude, double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
 
-    public int getLatitude() {
+    public double getLatitude() {
         return latitude;
     }
-    public int getLongitude(){
+
+    public double getLongitude() {
         return longitude;
+    }
+
+    @Override
+    public String toString() {
+        return "(" + latitude + ", " + longitude + ")";
     }
 }

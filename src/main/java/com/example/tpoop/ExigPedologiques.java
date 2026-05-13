@@ -9,10 +9,28 @@ public class ExigPedologiques {
      private double azoteMax;
      private double pluviMin;
 
+     public ExigPedologiques(double phMin, double phMax, double humiditeMin, double humiditeMax,
+                             double azoteMin, double azoteMax, double pluviMin) {
+          this.phMin = phMin;
+          this.phMax = phMax;
+          this.humiditeMin = humiditeMin;
+          this.humiditeMax = humiditeMax;
+          this.azoteMin = azoteMin;
+          this.azoteMax = azoteMax;
+          this.pluviMin = pluviMin;
+     }
 
-
-
-     boolean estCompatible(double ph, double humidite) {
+     public boolean estCompatible(double ph, double humidite) {
           return ph >= phMin && ph <= phMax && humidite >= humiditeMin && humidite <= humiditeMax;
+     }
+
+     public boolean estCompatibleAzote(double azote) {
+          return azote >= azoteMin && azote <= azoteMax;
+     }
+
+     @Override
+     public String toString() {
+          return "ExigPedologiques{pH:[" + phMin + "-" + phMax + "], humidite:[" + humiditeMin + "-" + humiditeMax
+                  + "], azote:[" + azoteMin + "-" + azoteMax + "], pluviMin:" + pluviMin + "}";
      }
 }

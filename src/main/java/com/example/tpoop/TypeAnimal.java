@@ -1,5 +1,5 @@
 package com.example.tpoop;
 
 public enum TypeAnimal {
-    RUMINANT, VOLAILLE
+    RUMINANT, VOLAILLE, AQUATIQUE
 }

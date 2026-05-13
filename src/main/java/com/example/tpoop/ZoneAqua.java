@@ -3,51 +3,42 @@ package com.example.tpoop;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ZoneAqua extends Zone{
-    private int Nbanimaux;
-    private String Espece;
+public class ZoneAqua extends Zone {
+    private String espece;
+    private int nbAnimaux;
     private ProgAlimentaire progAlim;
-    //private List<AquaticHealthEvent> healthEvents;
     private ProductionRecord productionRecord;
-    private ArrayList<Capteurs> capteurs;
-    public ZoneAqua (String code, String name, Status status){
-        super(code,name,status);
-    }
+    private static int nbSeq=0;
 
-    public ZoneAqua(String var1, String var2,Status var3, String espece) {
-        super(var1, var2,var3);
-        this.Espece = espece;
-        this.capteurs = new ArrayList();
+    public ZoneAqua( String name, Status status, String espece) {
+        super( name, status);
+        this.espece = espece;
+        this.nbAnimaux = 0;
         this.productionRecord = new ProductionRecord(TypeProd.POIDS_RECOLTE);
-        //this.healthEvents = new ArrayList();
     }
 
-    public void setFeedingProgram(ProgAlimentaire var1) {
-        this.progAlim = var1;
+    public String genererCode(){
+        nbSeq++;
+        return code = "ZA00"+String.valueOf(nbSeq);
+
     }
 
-    public ProgAlimentaire getProgAlim() {
-        return this.progAlim;
+    public void setNbAnimaux(int nb) { this.nbAnimaux = nb; }
+    public void setProgAlim(ProgAlimentaire prog) { this.progAlim = prog; }
+    public String getEspece() { return espece; }
+    public int getNbAnimaux() { return nbAnimaux; }
+    public ProgAlimentaire getProgAlim() { return progAlim; }
+    public ProductionRecord getProductionRecord() { return productionRecord; }
+
+    public void enregistrerProduction(double val) {
+        productionRecord.record(val);
     }
-
-    public void recordProduction(double var1) {
-        this.productionRecord.record(var1);
-    }
-
-    public void suspend() {
-        super.suspendre();
-       // this.suspendAllSensors();
-    }
-
-
-
-
-    //add sensor
 
     @Override
     public void display() {
         super.display();
-        System.out.println("Nombre d'especes aquacoles: "+Nbanimaux);
+        System.out.println("  Espece aquacole : " + espece + " | Nb individus : " + nbAnimaux);
+        if (progAlim != null) progAlim.display();
+        productionRecord.display();
     }
-
 }
