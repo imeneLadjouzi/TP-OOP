@@ -1,20 +1,30 @@
 package com.example.tpoop;
+import java.util.ArrayList;
 
 public class ZoneElevage extends Zone {
-    Animal[] animals;
-    //Capteur[] capteurs;
 
-    public  ZoneElevage( String code,  String name, String status){
+
+    ArrayList<Animal> animaux;
+    private ProgAlimentaire progAlim;
+    private String name;
+
+    public  ZoneElevage( String code,  String name, Status status){
         super(code,name,status);
     }
 
     @Override
     public void display() {
-        System.out.println("Zone d'élevage: "+name+" code: "+code+"Status"+status);
+        super.display();
+        System.out.println("Nombre d'animaux: "+ animaux.size());
     }
     @Override
-    public void setStatus(String status){
+    public void setStatus(Status status){
         this.status = status;
     }
-}
-//addANIMAL W LOULHRA aDDcULTURE
+
+    public void addAnimal(Animal a){
+        animaux.add(a);
+        }
+    }
+
+

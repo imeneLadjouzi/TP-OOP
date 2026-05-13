@@ -1,32 +1,46 @@
+
 package com.example.tpoop;
+import java.util.ArrayList;
 
 public class ZoneCulture extends Zone {
-    Object[] capteurs; //classe Capteur
-    Culture[] cultures;
-    private StadeCroissance stade_croiss = StadeCroissance.GERMINATION;
-    public void  update_croissance(StadeCroissance s){
-    stade_croiss = s;
-    }
-    public ZoneCulture (String code, String name, String status){
-        super(code,name,status);
-    }
-    @Override
-    public void display() {
-        System.out.println("Zone Culture: "+name+" code: "+code+"Status: "+status);
-    }
 
-    @Override
-    public void setStatus(String status){
-        this.status = status;
+    ArrayList<Culture> cultures;
+
+    public ZoneCulture (String code, String name, Status status){
+            super(code,name,status);
+        }
+
+        @Override
+        public void display() {
+            super.display();
+            System.out.println("Nombre de cultures: "+ cultures.size());
+        }
+        @Override
+        public void setStatus(Status status){
+            this.status = status;
+        }
+        public void displayCulture(){
+            for (Culture c: cultures){
+                c.display();
+            }
+        }
+    public void addCulture(Culture c){
+        cultures.add(c);
     }
-    public void displayCulture(){
-        for (int i=0; i<cultures.length; i++){
-            System.out.println(cultures[i].toString());
+    public void updateStadeCroiss(StadeCroissance s){
+        for(Culture c : cultures){
+            c.updateStadeCroiss(s);
         }
     }
-    public StadeCroissance displayCroissance(){
-        return stade_croiss;
+    public void displayStadeCroiss(){
+        for (Culture c : cultures){
+            System.out.println("Stade de croissance: "+c.getStadeCroiss());
+        }
+
     }
 
-
 }
+
+
+
+
