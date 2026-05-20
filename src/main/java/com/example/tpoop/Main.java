@@ -94,6 +94,20 @@ public class Main {
                 case 7 -> {
                     Zone z = choisirZone();
                     if (z != null) {
+                        System.out.print("Confirmer suppression de '" + z.getName() + "' ? (O/N) : ");
+                        String conf = sc.nextLine();
+                        if (conf.equalsIgnoreCase("O")) {
+                            ferme.supprimerZone(z.getCode());
+                            System.out.println("Zone supprimee.");
+                        } else {
+                            System.out.println("Suppression annulee.");
+                        }
+                    }
+                }
+
+                case 8 -> {
+                    Zone z = choisirZone();
+                    if (z != null) {
                         System.out.print("Nouveau nom : "); String n = sc.nextLine();
                         g.modifierNomZone(z, n);
                         System.out.println("Renommee.");
@@ -387,9 +401,14 @@ public class Main {
             System.out.printf("  %d. [%s] %s (%s)%n", i+1, z.getCode(), z.getName(),
                     z.getClass().getSimpleName());
         }
-        int idx = lireInt("Choisir (1-" + zones.size() + ") : ") - 1;
-        if (idx < 0 || idx >= zones.size()) { System.out.println("Index invalide."); return null; }
-        return zones.get(idx);
+        try{
+            int idx = lireInt("Choisir (1-" + zones.size() + ") : ") - 1;
+            return zones.get(idx);
+        }
+        catch (IndexOutOfBoundsException e){
+            System.out.println("Index invalide.");
+            return null;
+        }
     }
 
     static ZoneCulture choisirZoneCulture() {
@@ -425,9 +444,14 @@ public class Main {
                     c.getLocation() != null ? c.getLocation().getName() : "N/A",
                     c.getStatus());
         }
-        int idx = lireInt("Choisir (1-" + capteurs.size() + ") : ") - 1;
-        if (idx < 0 || idx >= capteurs.size()) { System.out.println("Index invalide."); return null; }
-        return capteurs.get(idx);
+        try{
+            int idx = lireInt("Choisir (1-" + capteurs.size() + ") : ") - 1;
+            return capteurs.get(idx);
+        }
+        catch (IndexOutOfBoundsException e){
+            System.out.println("Index invalide.");
+            return null;
+        }
     }
 
     static Animal choisirAnimal(ZoneElevage ze) {

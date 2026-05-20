@@ -27,6 +27,8 @@ public class Ferme {
     }
 
 
+
+
     public Zone trouverZoneParCode(String code) {
         return zones.stream()
                 .filter(z -> z.getCode().equals(code))
@@ -143,7 +145,7 @@ public class Ferme {
                 sb.append("[CULTURE] ");
                 sb.append(zc.getName()).append(" | Code: ").append(zc.getCode())
                         .append(" | Statut: ").append(zc.getStatus())
-                        .append(" | Cultures: ").append(zc.getCultures().size())
+                        .append(" | Culture: ").append(zc.getCultures().getNom())
                         .append(" | Capteurs: ").append(zc.getCapteurs().size()).append("\n");
             } else if (z instanceof ZoneElevage ze) {
                 sb.append("[ELEVAGE] ");

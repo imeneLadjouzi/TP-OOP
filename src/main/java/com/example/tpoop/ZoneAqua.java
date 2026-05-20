@@ -1,25 +1,26 @@
 package com.example.tpoop;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class ZoneAqua extends Zone {
     private String espece;
     private int nbAnimaux;
     private ProgAlimentaire progAlim;
-    private ProductionRecord productionRecord;
-    private static int nbSeq=0;
+    private static int nbSeq = 0;
 
-    public ZoneAqua( String name, Status status) {
-        super( name, status);
+    public ZoneAqua(String name, Status status, String espece) {
+        super(name, status);
+        this.espece = espece;
         this.nbAnimaux = 0;
-        this.productionRecord = new ProductionRecord(TypeProd.POIDS_RECOLTE);
     }
 
-    public String genererCode(){
+    @Override
+    public String genererCode() {
         nbSeq++;
-        return code = "ZA00"+String.valueOf(nbSeq);
+        return "ZA00" + nbSeq;
+    }
 
+
+    public void enregistrerProduction(double val) {
+        super.enregistrerProduction(new Prod(val, TypeProd.POIDS_RECOLTE));
     }
 
     public void setNbAnimaux(int nb) { this.nbAnimaux = nb; }
@@ -27,17 +28,12 @@ public class ZoneAqua extends Zone {
     public String getEspece() { return espece; }
     public int getNbAnimaux() { return nbAnimaux; }
     public ProgAlimentaire getProgAlim() { return progAlim; }
-    public ProductionRecord getProductionRecord() { return productionRecord; }
-
-    public void enregistrerProduction(double val) {
-        productionRecord.record(val);
-    }
 
     @Override
     public void display() {
         super.display();
         System.out.println("  Espece aquacole : " + espece + " | Nb individus : " + nbAnimaux);
         if (progAlim != null) progAlim.display();
-        productionRecord.display();
+        displayProduction();
     }
 }
