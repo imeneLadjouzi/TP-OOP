@@ -20,13 +20,10 @@ public class ExigPedologiques {
           this.pluviMin = pluviMin;
      }
 
-     public boolean estCompatible(double ph, double humidite) {
-          return ph >= phMin && ph <= phMax && humidite >= humiditeMin && humidite <= humiditeMax;
+     public boolean estCompatible(double ph, double humidite, double azote) {
+          return ph >= phMin && ph <= phMax && humidite >= humiditeMin && humidite <= humiditeMax && azote >= azoteMin && azote <= azoteMax ;
      }
 
-     public boolean estCompatibleAzote(double azote) {
-          return azote >= azoteMin && azote <= azoteMax;
-     }
 
      @Override
      public String toString() {

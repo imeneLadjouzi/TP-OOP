@@ -7,26 +7,26 @@ import java.util.Map;
 public class Releve {
     private static int compteur = 0;
     private int id;
-    private String codeCapteur;
+    private Capteurs capteur;
     private Map<String, Object> valeurs;
     private LocalDateTime dateHeure;
     private Niveau_gravite niveauReleve;
 
-    public Releve(String codeCapteur, Map<String, Object> valeurs) {
+    public Releve(Capteurs cap, Map<String, Object> valeurs) {
         this.id = ++compteur;
-        this.codeCapteur = codeCapteur;
+        this.capteur = cap;
         this.valeurs = valeurs;
         this.dateHeure = LocalDateTime.now();
         this.niveauReleve = Niveau_gravite.INFO;
     }
 
-    public Releve(String codeCapteur, Map<String, Object> valeurs, Niveau_gravite niveau) {
-        this(codeCapteur, valeurs);
+    public Releve(Capteurs cap, Map<String, Object> valeurs, Niveau_gravite niveau) {
+        this(cap, valeurs);
         this.niveauReleve = niveau;
     }
 
     public int getId() { return id; }
-    public String getCodeCapteur() { return codeCapteur; }
+    public Capteurs getCapteur() { return capteur; }
     public Map<String, Object> getValeurs() { return valeurs; }
     public LocalDateTime getDateHeure() { return dateHeure; }
     public Niveau_gravite getNiveauReleve() { return niveauReleve; }
@@ -35,7 +35,7 @@ public class Releve {
     @Override
     public String toString() {
         String dateStr = dateHeure.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        return "[" + id + "] " + dateStr + " | Capteur: " + codeCapteur
+        return "[" + id + "] " + dateStr + " | Capteur: " + capteur.getCode()
                 + " | Valeurs: " + valeurs + " | Niveau: " + niveauReleve;
     }
 }

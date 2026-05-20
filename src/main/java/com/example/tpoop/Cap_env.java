@@ -9,7 +9,7 @@ public class Cap_env extends Capteur_num {
     private double pluvi;
 
     public Cap_env(String code, Zone location, Status status, double temp, double humidity, double pluvi) {
-        super(code, location, status);
+        super(code, location, status,TypeCapteur.ENV);
         this.temp = temp;
         this.humidity = humidity;
         this.pluvi = pluvi;

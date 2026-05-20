@@ -8,7 +8,7 @@ public class Cap_biometrique extends Capteur_num {
     private double activity_per_min;
 
     public Cap_biometrique(String code, Zone location, Status status, double temp_corporelle, double activity_per_min) {
-        super(code, location, status);
+        super(code, location, status,TypeCapteur.BIOMETRIQUE);
         this.temp_corporelle = temp_corporelle;
         this.activity_per_min = activity_per_min;
     }

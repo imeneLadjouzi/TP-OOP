@@ -7,7 +7,7 @@ public abstract class Zone implements Suspendable {
     protected String code;
     protected String name;
     protected Status status;
-    protected List<Prod> productions;
+    protected List<Prod> productionRecord;
     protected List<Capteurs> capteurs;
 
     abstract public String genererCode();
@@ -16,7 +16,7 @@ public abstract class Zone implements Suspendable {
         this.name = name;
         this.code = this.genererCode();
         this.status = status;
-        this.productions = new ArrayList<>();
+        this.productionRecord = new ArrayList<>();
         this.capteurs = new ArrayList<>();
     }
 
@@ -29,16 +29,19 @@ public abstract class Zone implements Suspendable {
     }
 
     public void reactiver() {
+
         this.status = Status.ACTIF;
     }
 
     public void ajouterCapteur(Capteurs c) {
+
         capteurs.add(c);
     }
 
     public void supprimerCapteur(String code) {
         capteurs.removeIf(c -> c.getCode().equals(code));
     }
+
 
     @Override
     public void setStatus(Status status) {
@@ -52,9 +55,34 @@ public abstract class Zone implements Suspendable {
     public String getName() { return name; }
     public Status getStatus() { return status; }
     public List<Capteurs> getCapteurs() { return capteurs; }
-    public List<Prod> getProductions() { return productions; }
-
+    public List<Prod> getProductions() { return productionRecord; }
+// =================== Production Record =================
     public void enregistrerProduction(Prod p) {
-        productions.add(p);
+        productionRecord.add(p);
     }
+    public Prod getLatest() {
+        return productionRecord.isEmpty()
+                ? null
+                : productionRecord.getLast();
+    }
+    public List<Prod> getProductionRecordHistory(){
+        return productionRecord;
+    }
+
+    public double getTotal() {
+        double total = 0.0;
+        for (Prod p : productionRecord) {
+            total += p.getVal();
+        }
+        return total;
+    }
+    public void displayProduction() {
+        for (Prod p : productionRecord) {
+            p.displayProduction();
+        }
+        System.out.println(" Total Production: " + getTotal() + " | Nombre de releves: " + productionRecord.size());
+        System.out.println("Derniere Production: ");
+        getLatest().displayProduction();
+    }
+
 }

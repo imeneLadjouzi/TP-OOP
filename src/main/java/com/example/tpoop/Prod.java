@@ -16,4 +16,7 @@ public class Prod {
     public String toString() {
         return val + " " + prod.getUnite() + " (" + prod + ")";
     }
+    public void displayProduction(){
+        System.out.println("  Production : " + val + " " + prod.getUnite() + " (" + prod + ")");
+    }
 }

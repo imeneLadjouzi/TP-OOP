@@ -3,13 +3,15 @@ package com.example.tpoop;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.tpoop.Main.lireDouble;
+
 public class Cap_sol extends Capteur_num {
     private double azote;
     private double humidity;
     private double ph;
 
     public Cap_sol(String code, Zone location, Status status, double azote, double humidity, double ph) {
-        super(code, location, status);
+        super(code, location, status,TypeCapteur.SOL);
         this.azote = azote;
         this.humidity = humidity;
         this.ph = ph;

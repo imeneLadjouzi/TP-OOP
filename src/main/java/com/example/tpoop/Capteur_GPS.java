@@ -3,11 +3,13 @@ package com.example.tpoop;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.tpoop.Main.lireDouble;
+
 public class Capteur_GPS extends Capteurs {
     private PositionGeographique position;
 
     public Capteur_GPS(String code, Zone location, Status status, PositionGeographique position) {
-        super(code, location, status);
+        super(code, location, status, TypeCapteur.GPS);
         this.position = position;
     }
 

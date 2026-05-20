@@ -3,13 +3,12 @@ package com.example.tpoop;
 public class PlageSeuils {
     private double min;
     private double max;
-    private double seuilAvertissement; // seuil pour avertissement (% de la plage)
-    private double seuilCritique;      // seuil pour critique
+    private double seuilAvertissement;
+    private double seuilCritique;
 
     public PlageSeuils(double min, double max) {
         this.min = min;
         this.max = max;
-        // Par défaut : avertissement à 80% de la plage, critique hors plage
         this.seuilAvertissement = min + (max - min) * 0.8;
         this.seuilCritique = max;
     }

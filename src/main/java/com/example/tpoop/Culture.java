@@ -31,11 +31,16 @@ public class Culture {
     }
 
     public void display() {
-        System.out.println("  Culture : " + nom);
-        System.out.println("  Date de plantation : " + datePlantation);
-        System.out.println("  Date de recolte    : " + dateRecolte);
-        displayStadeCroiss();
-        if (exigPed != null)
-            System.out.println("  Exigences : " + exigPed);
+        try{
+            System.out.println("  Culture : " + nom);
+            System.out.println("  Date de plantation : " + datePlantation);
+            System.out.println("  Date de recolte    : " + dateRecolte);
+            displayStadeCroiss();
+            if (exigPed != null)
+                System.out.println("  Exigences : " + exigPed);
+        }catch (NullPointerException e){
+            System.out.println("  Culture Null");
+        }
+
     }
 }
