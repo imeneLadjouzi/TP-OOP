@@ -9,10 +9,10 @@ public class ZoneElevage extends Zone {
     private ProductionRecord productionRecord;
     static private int nbSeq=0;
 
-    public ZoneElevage(String name, Status status, TypeProd typeProd) {
+    public ZoneElevage(String name, Status status) {
         super(name, status);
         this.animaux = new ArrayList<>();
-        this.productionRecord = new ProductionRecord(typeProd);
+
     }
 
     public String genererCode(){

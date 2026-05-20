@@ -29,10 +29,12 @@ public abstract class Zone implements Suspendable {
     }
 
     public void reactiver() {
+
         this.status = Status.ACTIF;
     }
 
     public void ajouterCapteur(Capteurs c) {
+
         capteurs.add(c);
     }
 

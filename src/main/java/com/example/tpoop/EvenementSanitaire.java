@@ -3,7 +3,7 @@ package com.example.tpoop;
 import java.time.LocalDate;
 
 public class EvenementSanitaire {
-    public enum TypeEvenement { MALADIE, GUERISON, VACCINATION, PRISE_DE_POIDS, QUARANTAINE }
+
 
     private TypeEvenement type;
     private String description;

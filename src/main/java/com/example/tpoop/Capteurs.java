@@ -10,13 +10,15 @@ public abstract class Capteurs implements Suspendable {
     private Status status;
     private List<Releve> historique;
     private PlageSeuils plageSeuils;
+    TypeCapteur type;
 
-    public Capteurs(String code, Zone location, Status status) {
+    public Capteurs(String code, Zone location, Status status, TypeCapteur type) {
         this.code = code;
         this.location = location;
         this.status = status;
         this.historique = new ArrayList<>();
-        this.plageSeuils = new PlageSeuils(0, 100); // seuils par défaut
+        this.plageSeuils = new PlageSeuils(0, 100);
+        this.type = type;
     }
 
     public abstract Map<String, Object> send_values();
@@ -34,7 +36,7 @@ public abstract class Capteurs implements Suspendable {
                 break;
             }
         }
-        Releve r = new Releve(code, valeurs, niveau);
+        Releve r = new Releve(this, valeurs, niveau);
         historique.add(r);
         return r;
     }
@@ -65,6 +67,7 @@ public abstract class Capteurs implements Suspendable {
     public Status getStatus() { return status; }
     public List<Releve> getHistorique() { return historique; }
     public PlageSeuils getPlageSeuils() { return plageSeuils; }
+    public TypeCapteur getType() { return type; }
 
     @Override
     public String toString() {

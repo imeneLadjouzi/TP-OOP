@@ -10,9 +10,8 @@ public class ZoneAqua extends Zone {
     private ProductionRecord productionRecord;
     private static int nbSeq=0;
 
-    public ZoneAqua( String name, Status status, String espece) {
+    public ZoneAqua( String name, Status status) {
         super( name, status);
-        this.espece = espece;
         this.nbAnimaux = 0;
         this.productionRecord = new ProductionRecord(TypeProd.POIDS_RECOLTE);
     }
