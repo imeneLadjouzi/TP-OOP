@@ -1,6 +1,6 @@
 package com.example.tpoop;
 
-import javafx.scene.control.Alert;
+//import javafx.scene.control.Alert;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,10 +19,10 @@ public class Gestionnaire {
         Zone z;
         switch (type) {
             case AQUA -> {
-                z = new ZoneAqua(nom, Status.ACTIF);
+                z = new ZoneAqua(nom, Status.ACTIF,null);
             }
             case CULTURE -> {
-                z = new ZoneCulture(nom, Status.ACTIF);
+                z = new ZoneCulture(nom, Status.ACTIF,null);
             }
             case ELEVAGE -> {
                 z = new ZoneElevage(nom, Status.ACTIF);
@@ -50,7 +50,7 @@ public class Gestionnaire {
     }
 
     public void affecterCulture(ZoneCulture zone, Culture culture) {
-        zone.addCulture(culture);
+        zone.setCulture(culture);
         System.out.println("Culture '" + culture.getNom() + "' affectee a la zone '" + zone.getName() + "'.");
     }
 
@@ -79,7 +79,7 @@ public class Gestionnaire {
     // -----------------------Cultures
 
     public void enregistrerCulture(ZoneCulture z, Culture c) {
-        z.addCulture(c);
+        z.setCulture(c);
     }
 
     public void mettreAJourStadeCroissance(ZoneCulture zone, StadeCroissance stade) {
@@ -109,6 +109,11 @@ public class Gestionnaire {
         zone.setProgAlim(progAlimentaire);
     }
 
+    public void supprimerZone(String code) {
+        ferme.getZones().removeIf(z -> z.getCode().equals(code));
+        System.out.println("Zone '" + code + "' supprimee.");
+    }
+
     public void afficherProgAlim(ZoneElevage zone) {
         zone.getProgAlim().display();
     }
@@ -121,6 +126,7 @@ public class Gestionnaire {
     }
 
     public String dashboardCapteurs() {
+
         return ferme.tableauDeBordCapteurs();
     }
 
@@ -131,11 +137,9 @@ public class Gestionnaire {
 
     }
 
-    public void historiqueCapteurs(Capteurs cap, LocalDateTime date) {
-
-    }
 
     public void changerStatusCapteur(Capteurs capteurs, Status status) {
+
         capteurs.setStatus(status);
     }
 

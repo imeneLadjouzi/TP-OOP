@@ -3,6 +3,8 @@ package com.example.tpoop;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.tpoop.Main.lireDouble;
+
 public class Capteur_GPS extends Capteurs {
     private PositionGeographique position;
 

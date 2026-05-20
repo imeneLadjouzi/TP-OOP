@@ -80,7 +80,7 @@ public class TestScenarios {
         Culture ble = new Culture("Ble", "2025-10-01", "2026-06-15", StadeCroissance.GERMINATION, exig);
         g.affecterCulture(zc, ble);
 
-        asserter("Culture ajoutée", zc.getCultures().size() == 1);
+        asserter("Culture ajoutée", zc.getCultures() == ble);
         asserter("Stade initial GERMINATION", ble.getStadeCroiss() == StadeCroissance.GERMINATION);
 
         // Mise à jour du stade
@@ -88,8 +88,8 @@ public class TestScenarios {
         asserter("Stade mis à jour CROISSANCE", ble.getStadeCroiss() == StadeCroissance.CROISSANCE);
 
         // Compatibilité pédologique
-        asserter("Sol compatible (pH=6.8, h=50)", exig.estCompatible(6.8, 50));
-        asserter("Sol incompatible (pH=5.0)",     !exig.estCompatible(5.0, 50));
+        asserter("Sol compatible (pH=6.8, h=50)", exig.estCompatible(6.8, 50, 80));
+        asserter("Sol incompatible (pH=5.0)",     !exig.estCompatible(5.0, 50, 95));
 
         System.out.println(ferme.genererRapportCultures());
     }

@@ -142,7 +142,7 @@ public class SimulationTest {
 
         return switch (type) {
             case "CULTURE" -> {
-                ZoneCulture zc = new ZoneCulture(nom, st);
+                ZoneCulture zc = new ZoneCulture(nom, st,null);
                 // cultures
                 for (Object cObj : MiniJson.list(zNode, "cultures")) {
                     Map<String, Object> cNode = (Map<String, Object>) cObj;
@@ -160,7 +160,7 @@ public class SimulationTest {
                             StadeCroissance.valueOf(MiniJson.str(cNode, "stadeCroissance")),
                             exig
                     );
-                    zc.addCulture(culture);
+                    zc.setCulture(culture);
                 }
                 yield zc;
             }
@@ -196,7 +196,7 @@ public class SimulationTest {
                 yield ze;
             }
             case "AQUA" -> {
-                ZoneAqua za = new ZoneAqua(nom, st);
+                ZoneAqua za = new ZoneAqua(nom, st,"Sardine");
                 za.setNbAnimaux(MiniJson.integer(zNode, "nbAnimaux"));
                 // espece (fix bug ZoneAqua — champ jamais initialisé)
                 // On passe par un setter ajouté ici si manquant, sinon on le set via réflexion
@@ -421,8 +421,8 @@ public class SimulationTest {
                 Zone zc1 = zoneIndex.get("ZC001");
                 asserter("05-08 : stade culture = MATURITE",
                         zc1 instanceof ZoneCulture zc &&
-                                !zc.getCultures().isEmpty() &&
-                                zc.getCultures().get(0).getStadeCroiss() == StadeCroissance.MATURITE);
+                                !(zc.getCultures()==null )&&
+                                zc.getCultures().getStadeCroiss() == StadeCroissance.MATURITE);
             }
             case "2026-05-15" -> {
                 // CE01 temp=43 > seuil 40 → CRITIQUE → alerte
@@ -454,8 +454,8 @@ public class SimulationTest {
                 Zone zc1 = zoneIndex.get("ZC001");
                 asserter("05-20 : stade Ble = RECOLTE",
                         zc1 instanceof ZoneCulture zc &&
-                                !zc.getCultures().isEmpty() &&
-                                zc.getCultures().get(0).getStadeCroiss() == StadeCroissance.RECOLTE);
+                                !(zc.getCultures()==null) &&
+                                zc.getCultures().getStadeCroiss() == StadeCroissance.RECOLTE);
                 // Production enregistrée
                 asserter("05-20 : production ZC001 non vide",
                         zc1 != null && !zc1.getProductions().isEmpty());

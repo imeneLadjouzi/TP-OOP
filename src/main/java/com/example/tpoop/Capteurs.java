@@ -58,7 +58,8 @@ public abstract class Capteurs implements Suspendable {
         this.status = status;
     }
 
-    public void configurerSeuils(double min, double max) {
+    public void configurerSeuils(double min ,double max) {
+
         this.plageSeuils = new PlageSeuils(min, max);
     }
 

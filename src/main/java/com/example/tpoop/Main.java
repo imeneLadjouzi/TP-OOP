@@ -97,7 +97,7 @@ public class Main {
                         System.out.print("Confirmer suppression de '" + z.getName() + "' ? (O/N) : ");
                         String conf = sc.nextLine();
                         if (conf.equalsIgnoreCase("O")) {
-                            ferme.supprimerZone(z.getCode());
+                            g.supprimerZone(z.getCode());
                             System.out.println("Zone supprimee.");
                         } else {
                             System.out.println("Suppression annulee.");
@@ -292,10 +292,7 @@ public class Main {
         System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
     }
 
-    /**
-     * Affiche l'historique des relevés d'un capteur avec un filtre optionnel par plage de dates.
-     * Utilise la même logique que le filtre alertes (Specification pattern via ReleveSpecifications).
-     */
+
     static void historiqueCapteursAvecFiltre() {
         Capteurs c = choisirCapteur(); if (c == null) return;
 

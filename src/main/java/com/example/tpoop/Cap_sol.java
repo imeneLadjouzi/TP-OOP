@@ -3,6 +3,8 @@ package com.example.tpoop;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.example.tpoop.Main.lireDouble;
+
 public class Cap_sol extends Capteur_num {
     private double azote;
     private double humidity;

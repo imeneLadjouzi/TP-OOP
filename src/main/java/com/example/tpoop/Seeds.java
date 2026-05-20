@@ -10,19 +10,19 @@ public class Seeds {
 
     public static void initialiser(Ferme ferme) {
         // ── ZONES ──────────────────────────────────────────────────────────
-        ZoneCulture zc1 = new ZoneCulture("Champ Ble Nord",  Status.ACTIF);
-        ZoneCulture zc2 = new ZoneCulture("Serre Tomates",   Status.ACTIF);
+        ZoneCulture zc1 = new ZoneCulture("Champ Ble Nord",  Status.ACTIF,null);
+        ZoneCulture zc2 = new ZoneCulture("Serre Tomates",   Status.ACTIF,null);
         ZoneElevage ze1 = new ZoneElevage("Etable Vaches",   Status.ACTIF);
         ZoneElevage ze2 = new ZoneElevage("Poulailler",      Status.ACTIF);
-        ZoneAqua    za1 = new ZoneAqua   ("Bassin Tilapia",  Status.ACTIF);
+        ZoneAqua    za1 = new ZoneAqua   ("Bassin Tilapia",  Status.ACTIF,"sardine");
 
         // ── CULTURES ───────────────────────────────────────────────────────
         ExigPedologiques exigBle    = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400);
         ExigPedologiques exigTomate = new ExigPedologiques(5.5, 7.0, 60, 80, 80, 200, 600);
         Culture ble    = new Culture("Ble",    "2025-10-01", "2026-06-15", StadeCroissance.CROISSANCE, exigBle);
         Culture tomate = new Culture("Tomate", "2026-03-01", "2026-07-30", StadeCroissance.SEMI,       exigTomate);
-        zc1.addCulture(ble);
-        zc2.addCulture(tomate);
+        zc1.setCulture(ble);
+        zc2.setCulture(tomate);
 
         // ── ANIMAUX ────────────────────────────────────────────────────────
         EspeceAnim vache = new EspeceAnim(TypeAnimal.RUMINANT, "Vache laitiere");
