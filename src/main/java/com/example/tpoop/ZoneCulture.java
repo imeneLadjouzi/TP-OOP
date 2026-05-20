@@ -4,70 +4,57 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ZoneCulture extends Zone {
-    private List<Culture> cultures;
+    private Culture culture;
     static private int nbSeq=0;
 
-    public ZoneCulture( String name, Status status) {
+    public ZoneCulture( String name, Status status, Culture culture) {
         super( name, status);
-        this.cultures = new ArrayList<>();
+        this.culture=culture;
     }
 
     public String genererCode(){
         nbSeq++;
         return code = "ZC00"+String.valueOf(nbSeq);
-
     }
 
-    public void addCulture(Culture c) {
-        cultures.add(c);
+    //public void addCulture(Culture c) {
+    //    cultures.add(c);
+    //}
+
+
+    public Culture getCultures() { return culture; }
+    public void setCulture(Culture c){
+        this.culture=c;
     }
-
-    public void removeCulture(String nom) {
-        cultures.removeIf(c -> c.getNom().equalsIgnoreCase(nom));
-    }
-
-    public List<Culture> getCultures() { return cultures; }
-
     public void updateStadeCroiss(StadeCroissance s) {
-        for (Culture c : cultures) {
-            c.updateStadeCroiss(s);
-        }
+        culture.updateStadeCroiss(s);
     }
 
     public void displayStadeCroiss() {
-        for (Culture c : cultures) {
-            c.displayStadeCroiss();
-        }
+        culture.displayStadeCroiss();
     }
 
-    public void displayCultures() {
-        if (cultures.isEmpty()) {
-            System.out.println("  Aucune culture dans cette zone.");
-        } else {
-            for (Culture c : cultures) {
-                c.display();
-                System.out.println();
-            }
-        }
+    public void displayCulture() {
+        culture.display();
     }
 
     public String genererRapport() {
         StringBuilder sb = new StringBuilder();
         sb.append("=== Rapport Zone Culture: ").append(name).append(" ===\n");
-        sb.append("Statut: ").append(status).append(" | Nb cultures: ").append(cultures.size()).append("\n");
-        for (Culture c : cultures) {
-            sb.append("  - ").append(c.getNom())
-                    .append(" | Stade: ").append(c.getStadeCroiss())
-                    .append(" | Plantation: ").append(c.getDatePlantation())
-                    .append(" | Recolte prevue: ").append(c.getDateRecolte()).append("\n");
-        }
+        sb.append("Statut: ").append(status).append("\n");
+
+        sb.append("  - Culture").append(culture.getNom())
+                .append(" | Stade de croissance: ").append(culture.getStadeCroiss())
+                .append(" | date de Plantation: ").append(culture.getDatePlantation())
+                .append(" | Recolte prevue: ").append(culture.getDateRecolte()).append("\n");
+
         return sb.toString();
     }
 
     @Override
     public void display() {
         super.display();
-        System.out.println("  Nombre de cultures : " + cultures.size());
-        displayCultures();
+        System.out.println("  Culture : ");
+        displayCulture();
     }
 }

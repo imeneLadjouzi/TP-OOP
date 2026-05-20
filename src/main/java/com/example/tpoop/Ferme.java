@@ -47,6 +47,8 @@ public class Ferme {
         System.out.println("Zone '" + z.getName() + "' reactivee.");
     }
 
+
+
     public Zone trouverZoneParCode(String code) {
         return zones.stream()
                 .filter(z -> z.getCode().equals(code))
@@ -63,7 +65,7 @@ public class Ferme {
         if (zone.getStatus() == Status.SUSPENDU) {
             throw new IllegalStateException("Impossible d'affecter une culture a une zone suspendue.");
         }
-        ((ZoneCulture) zone).addCulture(culture);
+        ((ZoneCulture) zone).setCulture(culture);
         System.out.println("Culture '" + culture.getNom() + "' affectee a la zone '" + zone.getName() + "'.");
     }
 
@@ -241,7 +243,7 @@ public class Ferme {
                 sb.append("[CULTURE] ");
                 sb.append(zc.getName()).append(" | Code: ").append(zc.getCode())
                         .append(" | Statut: ").append(zc.getStatus())
-                        .append(" | Cultures: ").append(zc.getCultures().size())
+                        .append(" | Culture: ").append(zc.getCultures().getNom())
                         .append(" | Capteurs: ").append(zc.getCapteurs().size()).append("\n");
             } else if (z instanceof ZoneElevage ze) {
                 sb.append("[ELEVAGE] ");

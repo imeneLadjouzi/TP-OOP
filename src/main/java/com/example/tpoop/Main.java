@@ -9,7 +9,7 @@ public class Main {
     static Ferme ferme = new Ferme("Ferme Principale");
 
     public static void main(String[] args) {
-        initialiserDonneesDemo();
+        initialiserDonnees();
         boolean running = true;
         while (running) {
             afficherMenuPrincipal();
@@ -31,15 +31,8 @@ public class Main {
     //  DONNEES DE DEMONSTRATION
     // ================================================================
 
-    static void initialiserDonneesDemo() {
+    static void initialiserDonnees() {
         System.out.println("Initialisation des donnees de demonstration...");
-
-        // Zones
-        ZoneCulture zc1 = new ZoneCulture( "Champ Ble Nord", Status.ACTIF);
-        ZoneCulture zc2 = new ZoneCulture( "Serre Tomates", Status.ACTIF);
-        ZoneElevage ze1 = new ZoneElevage( "Etable Vaches", Status.ACTIF, TypeProd.LAIT);
-        ZoneElevage ze2 = new ZoneElevage( "Poulailler", Status.ACTIF, TypeProd.OEUFS);
-        ZoneAqua za1 = new ZoneAqua( "Bassin Tilapia", Status.ACTIF, "Tilapia");
 
         // Cultures
         ExigPedologiques exigBle = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400);
@@ -47,8 +40,14 @@ public class Main {
         Culture ble = new Culture("Ble", "2025-10-01", "2026-06-15", StadeCroissance.CROISSANCE, exigBle);
         Culture tomate = new Culture("Tomate", "2026-03-01", "2026-07-30", StadeCroissance.SEMI, exigTomate);
 
-        zc1.addCulture(ble);
-        zc2.addCulture(tomate);
+        // Zones
+        ZoneCulture zc1 = new ZoneCulture( "Champ Ble Nord", Status.ACTIF,ble);
+        ZoneCulture zc2 = new ZoneCulture( "Serre Tomates", Status.ACTIF,tomate);
+        ZoneElevage ze1 = new ZoneElevage( "Etable Vaches", Status.ACTIF);
+        ZoneElevage ze2 = new ZoneElevage( "Poulailler", Status.ACTIF);
+        ZoneAqua za1 = new ZoneAqua( "Bassin Tilapia", Status.ACTIF, "Tilapia");
+
+
 
         // Animaux
         EspeceAnim vache = new EspeceAnim(TypeAnimal.RUMINANT, "Vache laitiere");
@@ -133,26 +132,64 @@ public class Main {
             System.out.println("4. Ajouter une zone aquacole");
             System.out.println("5. Desactiver une zone");
             System.out.println("6. Reactiver une zone");
-            System.out.println("7. Modifier le nom d'une zone");
+            System.out.println("7. Supprimer une zone");
+            System.out.println("8. Modifier le nom d'une zone");
             System.out.println("0. Retour");
             int ch = lireInt("Choix : ");
             switch (ch) {
                 case 1 -> System.out.println(ferme.getVueEnsembleZones());
                 case 2 -> {
-                    System.out.print("Nom  : "); String nom = sc.nextLine();
-                    ferme.ajouterZone(new ZoneCulture(nom, Status.ACTIF));
+                    try {
+                        System.out.print("Nom : ");
+                        String nom = sc.nextLine();
+
+                        if (nom == null || nom.trim().isEmpty()) {
+                            throw new IllegalArgumentException("Le nom ne peut pas etre vide.");
+                        }
+
+                        if (!nom.matches("[a-zA-Z ]+")) {
+                            throw new IllegalArgumentException("Le nom contient des caracteres invalides.");
+                        }
+                        ferme.ajouterZone(new ZoneCulture(nom, Status.ACTIF, null));
+                    } catch (IllegalArgumentException e) {
+                        System.out.println(e.getMessage());
+                    }
+
                 }
                 case 3 -> {
-                    System.out.print("Nom  : "); String nom = sc.nextLine();
-                    System.out.println("Type de production (1=LAIT, 2=OEUFS) : ");
-                    int tp = lireInt("");
-                    TypeProd prod = tp == 2 ? TypeProd.OEUFS : TypeProd.LAIT;
-                    ferme.ajouterZone(new ZoneElevage(nom, Status.ACTIF, prod));
+                    try {
+                        System.out.print("Nom : ");
+                        String nom = sc.nextLine();
+
+                        if (nom == null || nom.trim().isEmpty()) {
+                            throw new IllegalArgumentException("Le nom ne peut pas etre vide.");
+                        }
+
+                        if (!nom.matches("[a-zA-Z ]+")) {
+                            throw new IllegalArgumentException("Le nom contient des caracteres invalides.");
+                        }
+                        ferme.ajouterZone(new ZoneElevage(nom, Status.ACTIF));
+                    } catch (IllegalArgumentException e) {
+                        System.out.println(e.getMessage());
+                    }
                 }
                 case 4 -> {
-                    System.out.print("Nom    : "); String nom = sc.nextLine();
-                    System.out.print("Espece : "); String esp = sc.nextLine();
-                    ferme.ajouterZone(new ZoneAqua( nom, Status.ACTIF, esp));
+
+                    try {
+                        System.out.print("Nom : ");
+                        String nom = sc.nextLine();
+                        if (nom == null || nom.trim().isEmpty()) {
+                            throw new IllegalArgumentException("Le nom ne peut pas etre vide.");
+                        }
+
+                        if (!nom.matches("[a-zA-Z ]+")) {
+                            throw new IllegalArgumentException("Le nom contient des caracteres invalides.");
+                        }
+                        System.out.print("Espece : "); String esp = sc.nextLine();
+                        ferme.ajouterZone(new ZoneAqua( nom, Status.ACTIF, esp));
+                    } catch (IllegalArgumentException e) {
+                        System.out.println(e.getMessage());
+                    }
                 }
                 case 5 -> {
                     Zone z = choisirZone();
@@ -163,6 +200,20 @@ public class Main {
                     if (z != null) ferme.reactiverZone(z);
                 }
                 case 7 -> {
+                    Zone z = choisirZone();
+                    if (z != null) {
+                        System.out.print("Confirmer suppression de '" + z.getName() + "' ? (O/N) : ");
+                        String conf = sc.nextLine();
+                        if (conf.equalsIgnoreCase("O")) {
+                            ferme.supprimerZone(z.getCode());
+                            System.out.println("Zone supprimee.");
+                        } else {
+                            System.out.println("Suppression annulee.");
+                        }
+                    }
+                }
+
+                case 8 -> {
                     Zone z = choisirZone();
                     if (z != null) {
                         System.out.print("Nouveau nom : "); String n = sc.nextLine();
@@ -205,7 +256,10 @@ public class Main {
                     System.out.print("pH min / max (ex: 6.0 7.5) : ");
                     double phMin = lireDouble("pH min : ");
                     double phMax = lireDouble("pH max : ");
-                    ExigPedologiques exig = new ExigPedologiques(phMin, phMax, 30, 70, 50, 150, 400);
+                    System.out.print("Humidity min / max (ex: 6.0 7.5) : ");
+                    double humiditeMin = lireDouble("Humidite min : ");
+                    double humiditeMax = lireDouble("humdite max: ");
+                    ExigPedologiques exig = new ExigPedologiques(phMin, phMax, humiditeMin, humiditeMax, 50, 150, 400);
                     Culture c = new Culture(nom, dp, dr, stade, exig);
                     try {
                         ferme.affecterCulture(zc, c);
@@ -216,6 +270,7 @@ public class Main {
                 case 3 -> {
                     ZoneCulture zc = choisirZoneCulture();
                     if (zc == null) break;
+                    zc.displayStadeCroiss();
                     System.out.println("Stade (0=GERMINATION 1=SEMI 2=CROISSANCE 3=MATURITE 4=RECOLTE) : ");
                     int si = lireInt("");
                     StadeCroissance stade = StadeCroissance.values()[Math.min(si, StadeCroissance.values().length - 1)];
@@ -444,7 +499,7 @@ public class Main {
                     if (z != null) {
                         System.out.println("Productions de la zone '" + z.getName() + "' :");
                         if (z.getProductions().isEmpty()) System.out.println("  Aucune production enregistree.");
-                        else z.getProductions().forEach(p -> System.out.println("  - " + p));
+                        else z.displayProduction();
                     }
                 }
                 case 0 -> back = true;
@@ -465,9 +520,14 @@ public class Main {
             Zone z = zones.get(i);
             System.out.println("  " + (i + 1) + ". [" + z.getCode() + "] " + z.getName() + " (" + z.getClass().getSimpleName() + ")");
         }
-        int idx = lireInt("Choisir (1-" + zones.size() + ") : ") - 1;
-        if (idx < 0 || idx >= zones.size()) { System.out.println("Index invalide."); return null; }
-        return zones.get(idx);
+        try{
+            int idx = lireInt("Choisir (1-" + zones.size() + ") : ") - 1;
+            return zones.get(idx);
+        }
+        catch (IndexOutOfBoundsException e){
+            System.out.println("Index invalide.");
+            return null;
+        }
     }
 
     static ZoneCulture choisirZoneCulture() {
@@ -477,9 +537,14 @@ public class Main {
         for (int i = 0; i < zones.size(); i++) {
             System.out.println("  " + (i + 1) + ". [" + zones.get(i).getCode() + "] " + zones.get(i).getName());
         }
-        int idx = lireInt("Choisir : ") - 1;
-        if (idx < 0 || idx >= zones.size()) { System.out.println("Index invalide."); return null; }
-        return (ZoneCulture) zones.get(idx);
+        try{
+            int idx = lireInt("Choisir (1-" + zones.size() + ") : ") - 1;
+            return (ZoneCulture) zones.get(idx);
+        }
+        catch (IndexOutOfBoundsException e){
+            System.out.println("Index invalide.");
+            return null;
+        }
     }
 
     static ZoneElevage choisirZoneElevage() {
@@ -489,9 +554,14 @@ public class Main {
         for (int i = 0; i < zones.size(); i++) {
             System.out.println("  " + (i + 1) + ". [" + zones.get(i).getCode() + "] " + zones.get(i).getName());
         }
-        int idx = lireInt("Choisir : ") - 1;
-        if (idx < 0 || idx >= zones.size()) { System.out.println("Index invalide."); return null; }
-        return (ZoneElevage) zones.get(idx);
+        try{
+            int idx = lireInt("Choisir (1-" + zones.size() + ") : ") - 1;
+            return (ZoneElevage) zones.get(idx);
+        }
+        catch (IndexOutOfBoundsException e){
+            System.out.println("Index invalide.");
+            return null;
+        }
     }
 
     static Capteurs choisirCapteur() {
@@ -503,14 +573,19 @@ public class Main {
             System.out.println("  " + (i + 1) + ". [" + c.getCode() + "] "
                     + c.getClass().getSimpleName() + " | " + c.getStatus());
         }
-        int idx = lireInt("Choisir (1-" + capteurs.size() + ") : ") - 1;
-        if (idx < 0 || idx >= capteurs.size()) { System.out.println("Index invalide."); return null; }
-        return capteurs.get(idx);
+        try{
+            int idx = lireInt("Choisir (1-" + capteurs.size() + ") : ") - 1;
+            return capteurs.get(idx);
+        }
+        catch (IndexOutOfBoundsException e){
+            System.out.println("Index invalide.");
+            return null;
+        }
     }
 
-    // ================================================================
-    //  LECTURE SECURISEE
-    // ================================================================
+
+    //  ================= Additional ====================
+
 
     static int lireInt(String prompt) {
         while (true) {
