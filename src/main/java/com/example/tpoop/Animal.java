@@ -23,13 +23,13 @@ public class Animal {
 
     public void enregistrerEvenementSanitaire(EvenementSanitaire evt) {
         historiqueSanitaire.add(evt);
-        if (evt.getType() == EvenementSanitaire.TypeEvenement.MALADIE) {
+        if (evt.getType() == TypeEvenement.MALADIE) {
             this.etat = EtatSante.MALADE;
-        } else if (evt.getType() == EvenementSanitaire.TypeEvenement.QUARANTAINE) {
+        } else if (evt.getType() == TypeEvenement.QUARANTAINE) {
             this.etat = EtatSante.EN_QUARANTAINE;
-        } else if (evt.getType() == EvenementSanitaire.TypeEvenement.GUERISON) {
+        } else if (evt.getType() == TypeEvenement.GUERISON) {
             this.etat = EtatSante.SAIN;
-        } else if (evt.getType() == EvenementSanitaire.TypeEvenement.PRISE_DE_POIDS) {
+        } else if (evt.getType() == TypeEvenement.PRISE_DE_POIDS) {
             this.poids = evt.getValeur();
         }
     }

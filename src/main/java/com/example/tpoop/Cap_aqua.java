@@ -9,7 +9,7 @@ public class Cap_aqua extends Capteur_num {
     private double ph;
 
     public Cap_aqua(String code, Zone location, Status status, double temp, double oxygen, double ph) {
-        super(code, location, status);
+        super(code, location, status,TypeCapteur.AQUA);
         this.temp = temp;
         this.oxygen = oxygen;
         this.ph = ph;

@@ -11,6 +11,7 @@ public class ZoneElevage extends Zone {
     public ZoneElevage(String name, Status status) {
         super(name, status);
         this.animaux = new ArrayList<>();
+
     }
 
     @Override

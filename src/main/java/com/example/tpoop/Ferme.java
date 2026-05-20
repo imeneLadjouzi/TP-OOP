@@ -1,7 +1,9 @@
 package com.example.tpoop;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Ferme {
     private String nom;
@@ -24,28 +26,6 @@ public class Ferme {
         System.out.println("Zone '" + z.getName() + "' ajoutee.");
     }
 
-    public void supprimerZone(String code) {
-        zones.removeIf(z -> z.getCode().equals(code));
-        System.out.println("Zone '" + code + "' supprimee.");
-    }
-
-    public void modifierNomZone(Zone z, String nouveauNom) {
-        z.setName(nouveauNom);
-    }
-
-    public void modifierCodeZone(Zone z, String nouveauCode) {
-        z.setCode(nouveauCode);
-    }
-
-    public void desactiverZone(Zone z) {
-        z.setStatus(Status.SUSPENDU);
-        System.out.println("Zone '" + z.getName() + "' suspendue.");
-    }
-
-    public void reactiverZone(Zone z) {
-        z.setStatus(Status.ACTIF);
-        System.out.println("Zone '" + z.getName() + "' reactivee.");
-    }
 
 
 
@@ -57,22 +37,6 @@ public class Ferme {
     }
 
     // ==================== GESTION DES CULTURES ====================
-
-    public void affecterCulture(Zone zone, Culture culture) {
-        if (!(zone instanceof ZoneCulture)) {
-            throw new IllegalArgumentException("La zone '" + zone.getName() + "' n'est pas une zone de culture.");
-        }
-        if (zone.getStatus() == Status.SUSPENDU) {
-            throw new IllegalStateException("Impossible d'affecter une culture a une zone suspendue.");
-        }
-        ((ZoneCulture) zone).setCulture(culture);
-        System.out.println("Culture '" + culture.getNom() + "' affectee a la zone '" + zone.getName() + "'.");
-    }
-
-    public void mettreAJourStadeCroissance(ZoneCulture zone, StadeCroissance stade) {
-        zone.updateStadeCroiss(stade);
-        System.out.println("Stade de croissance mis a jour : " + stade);
-    }
 
     public String genererRapportCultures() {
         StringBuilder sb = new StringBuilder();
@@ -88,42 +52,10 @@ public class Ferme {
         return sb.toString();
     }
 
-    // ==================== GESTION DES ANIMAUX ====================
-
-    public void affecterAnimal(Zone zone, Animal animal) {
-        if (!(zone instanceof ZoneElevage)) {
-            throw new IllegalArgumentException("La zone '" + zone.getName() + "' n'est pas une zone d'elevage.");
-        }
-        if (zone.getStatus() == Status.SUSPENDU) {
-            throw new IllegalStateException("Impossible d'affecter un animal a une zone suspendue.");
-        }
-        ((ZoneElevage) zone).addAnimal(animal);
-        System.out.println("Animal #" + animal.getID() + " affecte a la zone '" + zone.getName() + "'.");
-    }
-
-    public void definirProgAlimentaireElevage(ZoneElevage zone, ProgAlimentaire prog) {
-        zone.setProgAlim(prog);
-        System.out.println("Programme alimentaire defini pour la zone '" + zone.getName() + "'.");
-    }
-
-    public void definirProgAlimentaireAqua(ZoneAqua zone, ProgAlimentaire prog) {
-        zone.setProgAlim(prog);
-        System.out.println("Programme alimentaire defini pour la zone aquacole '" + zone.getName() + "'.");
-    }
-
-    // ==================== GESTION DE LA PRODUCTION ====================
-
-    public void enregistrerProduction(Zone zone, Prod p) {
-        zone.enregistrerProduction(p);
-        System.out.println("Production enregistree : " + p + " pour la zone '" + zone.getName() + "'.");
-    }
-
     // ==================== GESTION DES CAPTEURS ====================
 
-    public void ajouterCapteur(Zone zone, Capteurs capteur) {
-        zone.ajouterCapteur(capteur);
+    public void ajouterCapteur(Capteurs capteur) {
         tousLesCapteurs.add(capteur);
-        System.out.println("Capteur '" + capteur.getCode() + "' ajoute a la zone '" + zone.getName() + "'.");
     }
 
     public Capteurs trouverCapteurParCode(String code) {
@@ -146,7 +78,7 @@ public class Ferme {
         // Générer une alerte si nécessaire
         if (r.getNiveauReleve() != Niveau_gravite.INFO) {
             String msg = "Capteur " + capteur.getCode() + " hors seuils : " + r.getValeurs();
-            Alerte alerte = new Alerte(r, r.getNiveauReleve(), msg);
+            Alerte alerte = new Alerte(r, r.getNiveauReleve(), msg,r.getCapteur().getLocation());
             alertes.add(alerte);
             System.out.println("  >> ALERTE generee : " + alerte);
         }
@@ -180,53 +112,23 @@ public class Ferme {
         return sb.toString();
     }
 
-    // ==================== GESTION DES ALERTES ====================
 
-    public String afficherAlertesActives() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("===== ALERTES ACTIVES =====\n");
-        alertes.stream()
-                .filter(Alerte::isActive)
-                .sorted((a, b) -> b.getGravite().compareTo(a.getGravite()))
-                .forEach(a -> sb.append(a).append("\n"));
-        if (alertes.stream().noneMatch(Alerte::isActive)) {
-            sb.append("Aucune alerte active.\n");
-        }
-        return sb.toString();
+    public List<Alerte> filtrer(Zone zone,
+                                TypeCapteur type,
+                                Niveau_gravite niveau,
+                                LocalDate dateDebut,
+                                LocalDate dateFin) {
+        AlerteSpecification spec = AlerteSpecifications.zoneEquals(zone)
+                .and(AlerteSpecifications.typeAlerteEquals(type))
+                .and(AlerteSpecifications.niveauEquals(niveau))
+                .and(AlerteSpecifications.dateEntre(dateDebut, dateFin));
+
+        return alertes.stream()
+                .filter(spec::isSatisfiedBy)
+                .collect(Collectors.toList());
     }
 
-    public void acquitterAlerte(int id) {
-        alertes.stream()
-                .filter(a -> a.getId() == id)
-                .findFirst()
-                .ifPresent(a -> {
-                    a.acquitter();
-                    System.out.println("Alerte #" + id + " acquittee.");
-                });
-    }
 
-    public void supprimerAlerte(int id) {
-        alertes.stream()
-                .filter(a -> a.getId() == id)
-                .findFirst()
-                .ifPresent(a -> {
-                    a.supprimer();
-                    System.out.println("Alerte #" + id + " supprimee.");
-                });
-    }
-
-    public String historiqueAlertes() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("===== HISTORIQUE DES ALERTES =====\n");
-        if (alertes.isEmpty()) {
-            sb.append("Aucune alerte enregistree.\n");
-        } else {
-            for (Alerte a : alertes) {
-                sb.append(a).append("\n");
-            }
-        }
-        return sb.toString();
-    }
 
     // ==================== VUE D'ENSEMBLE ====================
 

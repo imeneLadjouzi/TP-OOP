@@ -13,14 +13,16 @@ public class Alerte {
     private Niveau_gravite gravite;
     private LocalDateTime dateCreation;
     private String message;
+    private Zone zone;
 
-    public Alerte(Releve releve, Niveau_gravite gravite, String message) {
+    public Alerte(Releve releve, Niveau_gravite gravite, String message, Zone zone) {
         this.id = ++compteur;
         this.releve = releve;
         this.gravite = gravite;
         this.message = message;
         this.statut = StatutAlerte.ACTIVE;
         this.dateCreation = LocalDateTime.now();
+        this.zone = zone;
     }
 
     public void acquitter() {
@@ -41,6 +43,7 @@ public class Alerte {
     public Niveau_gravite getGravite() { return gravite; }
     public String getMessage() { return message; }
     public LocalDateTime getDateCreation() { return dateCreation; }
+    public Zone getZone() { return zone; }
 
     @Override
     public String toString() {
