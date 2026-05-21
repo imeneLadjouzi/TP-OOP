@@ -144,9 +144,11 @@ public class Ferme {
             if (z instanceof ZoneCulture zc) {
                 sb.append("[CULTURE] ");
                 sb.append(zc.getName()).append(" | Code: ").append(zc.getCode())
-                        .append(" | Statut: ").append(zc.getStatus())
-                        .append(" | Culture: ").append(zc.getCultures().getNom())
-                        .append(" | Capteurs: ").append(zc.getCapteurs().size()).append("\n");
+                        .append(" | Statut: ").append(zc.getStatus()).append(" | Culture: ");
+                        if(zc.getCultures() == null) sb.append("Aucune culture enregistree");
+                        else
+                        sb.append(zc.getCultures().getNom());
+                        sb.append(" | Capteurs: ").append(zc.getCapteurs().size()).append("\n");
             } else if (z instanceof ZoneElevage ze) {
                 sb.append("[ELEVAGE] ");
                 sb.append(ze.getName()).append(" | Code: ").append(ze.getCode())

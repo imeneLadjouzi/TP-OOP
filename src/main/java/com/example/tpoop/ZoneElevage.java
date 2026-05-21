@@ -6,12 +6,13 @@ import java.util.List;
 public class ZoneElevage extends Zone {
     private List<Animal> animaux;
     private ProgAlimentaire progAlim;
+    private TypeAnimal ta;
     private static int nbSeq = 0;
 
-    public ZoneElevage(String name, Status status) {
+    public ZoneElevage(String name, Status status, TypeAnimal ta) {
         super(name, status);
         this.animaux = new ArrayList<>();
-
+        this.ta=ta;
     }
 
     @Override
@@ -25,7 +26,7 @@ public class ZoneElevage extends Zone {
     public void setProgAlim(ProgAlimentaire prog) { this.progAlim = prog; }
     public ProgAlimentaire getProgAlim() { return progAlim; }
     public List<Animal> getAnimaux() { return animaux; }
-    //public TypeProd getTypeProd() { return typeProd; }
+    public TypeAnimal getTypeAnimal() { return ta; }
 
     public int getNbAnimauxMalades() {
         return (int) animaux.stream()

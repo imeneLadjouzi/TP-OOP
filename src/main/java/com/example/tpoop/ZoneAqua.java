@@ -25,9 +25,10 @@ public class ZoneAqua extends Zone {
 
     public void setNbAnimaux(int nb) { this.nbAnimaux = nb; }
     public void setProgAlim(ProgAlimentaire prog) { this.progAlim = prog; }
+    public ProgAlimentaire getProgAlim() { return progAlim; }
     public String getEspece() { return espece; }
     public int getNbAnimaux() { return nbAnimaux; }
-    public ProgAlimentaire getProgAlim() { return progAlim; }
+
 
     @Override
     public void display() {

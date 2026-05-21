@@ -151,7 +151,7 @@ public class SimulationTest {
                             MiniJson.dbl(exigNode, "phMin"),      MiniJson.dbl(exigNode, "phMax"),
                             MiniJson.dbl(exigNode, "humiditeMin"),MiniJson.dbl(exigNode, "humiditeMax"),
                             MiniJson.dbl(exigNode, "azoteMin"),   MiniJson.dbl(exigNode, "azoteMax"),
-                            MiniJson.dbl(exigNode, "pluviMin")
+                            MiniJson.dbl(exigNode, "pluviMin"), MiniJson.dbl(exigNode, "pluviMax")
                     );
                     Culture culture = new Culture(
                             MiniJson.str(cNode, "nom"),
@@ -166,7 +166,7 @@ public class SimulationTest {
             }
             case "ELEVAGE" -> {
                 TypeProd tp = TypeProd.valueOf(MiniJson.str(zNode, "typeProd"));
-                ZoneElevage ze = new ZoneElevage(nom, st);
+                ZoneElevage ze = new ZoneElevage(nom, st, TypeAnimal.valueOf(MiniJson.str(zNode, "typeAnimal")));
                 // programme alimentaire
                 Map<String, Object> progNode = MiniJson.obj(zNode, "progAlimentaire");
                 if (!progNode.isEmpty()) {

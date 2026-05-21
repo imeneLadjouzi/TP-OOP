@@ -17,12 +17,8 @@ public class ZoneCulture extends Zone {
         return code = "ZC00"+String.valueOf(nbSeq);
     }
 
-    //public void addCulture(Culture c) {
-    //    cultures.add(c);
-    //}
-
-
-    public Culture getCultures() { return culture; }
+    public Culture getCultures() {
+         return culture; }
     public void setCulture(Culture c){
         this.culture=c;
     }
@@ -35,7 +31,12 @@ public class ZoneCulture extends Zone {
     }
 
     public void displayCulture() {
-        culture.display();
+        try{
+            culture.display();
+        }catch (NullPointerException e){
+            System.out.println("Aucune culture assignée à cette zone.");
+        }
+
     }
 
     public String genererRapport() {

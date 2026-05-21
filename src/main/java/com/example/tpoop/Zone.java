@@ -26,11 +26,16 @@ public abstract class Zone implements Suspendable {
 
     public void suspendre() {
         this.status = Status.SUSPENDU;
+        for (Capteurs c: capteurs){
+            c.suspendre();
+        }
     }
 
     public void reactiver() {
-
         this.status = Status.ACTIF;
+        for (Capteurs c: capteurs){
+            c.activer();
+        }
     }
 
     public void ajouterCapteur(Capteurs c) {
@@ -58,16 +63,17 @@ public abstract class Zone implements Suspendable {
     public List<Prod> getProductions() { return productionRecord; }
 // =================== Production Record =================
     public void enregistrerProduction(Prod p) {
-        productionRecord.add(p);
+        if (status == Status.SUSPENDU) throw new IllegalStateException("La Zone est suspendue.");
+        else
+            productionRecord.add(p);
+
     }
     public Prod getLatest() {
         return productionRecord.isEmpty()
                 ? null
                 : productionRecord.getLast();
     }
-    public List<Prod> getProductionRecordHistory(){
-        return productionRecord;
-    }
+
 
     public double getTotal() {
         double total = 0.0;
@@ -80,9 +86,8 @@ public abstract class Zone implements Suspendable {
         for (Prod p : productionRecord) {
             p.displayProduction();
         }
-        System.out.println(" Total Production: " + getTotal() + " | Nombre de releves: " + productionRecord.size());
-        System.out.println("Derniere Production: ");
-        getLatest().displayProduction();
+        System.out.println("  Production Totale: " + getTotal() + " | Nombre de releves: " + productionRecord.size());
+        System.out.println("  Derniere Production: " + getLatest().getVal() + getLatest().getProd().getUnite() + " (" + getLatest().getProd() + ") enregistre le " + getLatest().getDate());
     }
 
 }

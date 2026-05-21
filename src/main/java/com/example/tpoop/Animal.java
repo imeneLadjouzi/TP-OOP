@@ -34,17 +34,9 @@ public class Animal {
         }
     }
 
-    public void enregistrerHealth(EtatSante etat) {
-        this.etat = etat;
-    }
-
-    public void enregistrerPoids(double poids) {
-        this.poids = poids;
-    }
 
     public int getID() { return ID; }
     public EspeceAnim getEspece() { return espece; }
-    public int getAge() { return age; }
     public double getPoids() { return poids; }
     public EtatSante getEtat() { return etat; }
     public List<EvenementSanitaire> getHistoriqueSanitaire() { return historiqueSanitaire; }

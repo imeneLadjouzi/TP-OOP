@@ -3,8 +3,8 @@ package com.example.tpoop;
 //import javafx.scene.control.Alert;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Scanner;
 
 public class Gestionnaire {
     Ferme ferme;
@@ -19,22 +19,37 @@ public class Gestionnaire {
         Zone z;
         switch (type) {
             case AQUA -> {
-                z = new ZoneAqua(nom, Status.ACTIF,null);
+                Scanner sc = new Scanner(System.in);
+                System.out.print("Espece habitant la zone: "); String espece = sc.nextLine();
+                z = new ZoneAqua(nom, Status.ACTIF,espece);
+                ferme.ajouterZone(z);
             }
             case CULTURE -> {
+
                 z = new ZoneCulture(nom, Status.ACTIF,null);
+                ferme.ajouterZone(z);
             }
             case ELEVAGE -> {
-                z = new ZoneElevage(nom, Status.ACTIF);
+                Scanner sc = new Scanner(System.in);
+                try {
+                    System.out.print("Type d'animaux habitant la zone (RUMINANT-VOLAILLE): ");
+                    String s = sc.nextLine().trim().toUpperCase();
+                    TypeAnimal ta = TypeAnimal.valueOf(s);
+                    z = new ZoneElevage(nom, Status.ACTIF, ta);
+                    ferme.ajouterZone(z);
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Type d'animal invalide.");
+                }
             }
             default -> {
                 System.out.println("Erreur");
                 return;
             }
         }
-        ferme.ajouterZone(z);
+
         System.out.println("Zone '" + nom + "' ajoutee.");
     }
+
 
     //public void modifier;
     public void modifierNomZone(Zone z, String nom) {
@@ -50,16 +65,26 @@ public class Gestionnaire {
     }
 
     public void affecterCulture(ZoneCulture zone, Culture culture) {
+        if (zone.getStatus() == Status.SUSPENDU) {
+            throw new IllegalStateException("Impossible d'affecter une culture a une zone suspendue.");
+        }
         zone.setCulture(culture);
         System.out.println("Culture '" + culture.getNom() + "' affectee a la zone '" + zone.getName() + "'.");
     }
 
     public void affecterAnimal(ZoneElevage zone, Animal animal) {
-        /*if (zone.getStatus() == Status.SUSPENDU) {
-            throw new IllegalStateException("Impossible d'affecter une culture a une zone suspendue.");
-        }*/
-        zone.addAnimal(animal);
-        System.out.println("Animal '" + "' affectee a la zone '" + zone.getName() + "'.");
+        try{
+            if (zone.getStatus() == Status.SUSPENDU) {
+                throw new IllegalStateException("Impossible d'affecter un animal a une zone suspendue.");
+            }
+            if (animal.getEspece().getType() != zone.getTypeAnimal()) {
+                throw new TypeAnimalIncompatibleException("Type d'animal incompatible avec la zone. Zone attend: " + zone.getTypeAnimal() + ", mais l'animal est de type: " + animal.getEspece().getType());
+            }
+            zone.addAnimal(animal);
+            System.out.println("Animal " + animal.getEspece().getName() + " affecte a la zone '" + zone.getName() + "'.");
+        }catch (TypeAnimalIncompatibleException e){
+            System.out.println(e.getMessage());}
+
     }
 
     public String consulterZones() {
@@ -67,7 +92,7 @@ public class Gestionnaire {
     }
 
     public void reactiverZone(Zone z) {
-        z.setStatus(Status.ACTIF);
+        z.reactiver();
         System.out.println("Zone '" + z.getName() + "' reactivee.");
     }
 
@@ -78,49 +103,54 @@ public class Gestionnaire {
 
     // -----------------------Cultures
 
-    public void enregistrerCulture(ZoneCulture z, Culture c) {
-        z.setCulture(c);
-    }
 
+    public void displayStadeCroissance(ZoneCulture z) {
+        z.displayStadeCroiss();
+    }
     public void mettreAJourStadeCroissance(ZoneCulture zone, StadeCroissance stade) {
         zone.updateStadeCroiss(stade);
         System.out.println("Stade de croissance mis a jour : " + stade);
     }
 
-    public void rapportCultures(ZoneCulture zone) {
-        System.out.println(zone.genererRapport());
-    }
 
-    // -----------------------------Animaux
+    // -----------------------------Animaux----------------
 
-    public void enregistrerAnimal(ZoneElevage z, Animal c) {
-        z.addAnimal(c);
-    }
 
     public void consignerEvenementsSanitaires(ZoneElevage zone) {
         for (Animal an : zone.getAnimaux()) {
             an.displayHistoriqueSanitaire();
-
         }
-
     }
 
-    public void definirProgAlim(ZoneElevage zone, ProgAlimentaire progAlimentaire) {
-        zone.setProgAlim(progAlimentaire);
-    }
-
-    public void supprimerZone(String code) {
-        ferme.getZones().removeIf(z -> z.getCode().equals(code));
-        System.out.println("Zone '" + code + "' supprimee.");
+    public void definirProgAlim(Zone zone, ProgAlimentaire progAlimentaire) {
+        if (zone instanceof ZoneElevage) {
+            ((ZoneElevage)zone).setProgAlim(progAlimentaire);
+        }
+        if (zone instanceof ZoneAqua){
+            ((ZoneAqua) zone).setProgAlim(progAlimentaire);
+        }
     }
 
     public void afficherProgAlim(ZoneElevage zone) {
         zone.getProgAlim().display();
     }
+    public void afficherProgAlim(ZoneAqua zone) {
+        zone.getProgAlim().display();
+    }
+    public void supprimerZone(String code) {
+        ferme.getZones().removeIf(z -> z.getCode().equals(code));
+        System.out.println("Zone '" + code + "' supprimee.");
+    }
+
+
+
 
     // --------------------------- Capteurs -------------------
 
     public void ajouterCapteur(Zone zone, Capteurs capteur) {
+        if (zone.getStatus() == Status.SUSPENDU) {
+            throw new IllegalStateException("Impossible d'ajouter un capteur a une zone suspendue.");
+        }
         zone.ajouterCapteur(capteur);
         ferme.ajouterCapteur(capteur);
     }
