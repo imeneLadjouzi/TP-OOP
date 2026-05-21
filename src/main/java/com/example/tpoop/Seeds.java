@@ -12,13 +12,13 @@ public class Seeds {
         // ── ZONES ──────────────────────────────────────────────────────────
         ZoneCulture zc1 = new ZoneCulture("Champ Ble Nord",  Status.ACTIF,null);
         ZoneCulture zc2 = new ZoneCulture("Serre Tomates",   Status.ACTIF,null);
-        ZoneElevage ze1 = new ZoneElevage("Etable Vaches",   Status.ACTIF);
-        ZoneElevage ze2 = new ZoneElevage("Poulailler",      Status.ACTIF);
+        ZoneElevage ze1 = new ZoneElevage("Etable Vaches",   Status.ACTIF,TypeAnimal.RUMINANT);
+        ZoneElevage ze2 = new ZoneElevage("Poulailler",      Status.ACTIF,TypeAnimal.VOLAILLE);
         ZoneAqua    za1 = new ZoneAqua   ("Bassin Tilapia",  Status.ACTIF,"sardine");
 
         // ── CULTURES ───────────────────────────────────────────────────────
-        ExigPedologiques exigBle    = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400);
-        ExigPedologiques exigTomate = new ExigPedologiques(5.5, 7.0, 60, 80, 80, 200, 600);
+        ExigPedologiques exigBle    = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400,700);
+        ExigPedologiques exigTomate = new ExigPedologiques(5.5, 7.0, 60, 80, 80, 200, 600,900);
         Culture ble    = new Culture("Ble",    "2025-10-01", "2026-06-15", StadeCroissance.CROISSANCE, exigBle);
         Culture tomate = new Culture("Tomate", "2026-03-01", "2026-07-30", StadeCroissance.SEMI,       exigTomate);
         zc1.setCulture(ble);

@@ -76,7 +76,7 @@ public class TestScenarios {
         g.ajouterZone("Serre", TypeZone.CULTURE);
         ZoneCulture zc = Seeds.premierZoneCulture(ferme);
 
-        ExigPedologiques exig = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400);
+        ExigPedologiques exig = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400, 680);
         Culture ble = new Culture("Ble", "2025-10-01", "2026-06-15", StadeCroissance.GERMINATION, exig);
         g.affecterCulture(zc, ble);
 
@@ -88,8 +88,8 @@ public class TestScenarios {
         asserter("Stade mis à jour CROISSANCE", ble.getStadeCroiss() == StadeCroissance.CROISSANCE);
 
         // Compatibilité pédologique
-        asserter("Sol compatible (pH=6.8, h=50)", exig.estCompatible(6.8, 50, 80));
-        asserter("Sol incompatible (pH=5.0)",     !exig.estCompatible(5.0, 50, 95));
+        asserter("Sol compatible (pH=6.8, h=50)", exig.estCompatible(6.8, 50, 80, 60));
+        asserter("Sol incompatible (pH=5.0)",     !exig.estCompatible(5.0, 50, 95, 60));
 
         System.out.println(ferme.genererRapportCultures());
     }

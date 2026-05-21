@@ -8,7 +8,7 @@ public class EvenementSanitaire {
     private TypeEvenement type;
     private String description;
     private LocalDate date;
-    private double valeur; // poids si pertinent
+    private double valeur;
 
     public EvenementSanitaire(TypeEvenement type, String description) {
         this.type = type;
@@ -19,6 +19,7 @@ public class EvenementSanitaire {
     public EvenementSanitaire(TypeEvenement type, String description, double valeur) {
         this(type, description);
         this.valeur = valeur;
+        this.date= LocalDate.now();
     }
 
     public TypeEvenement getType() { return type; }

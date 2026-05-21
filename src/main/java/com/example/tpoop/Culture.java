@@ -30,17 +30,15 @@ public class Culture {
         System.out.println("  Stade de croissance de [" + nom + "]: " + stadeCroiss);
     }
 
-    public void display() {
-        try{
+    public void display() throws NullPointerException {
+
             System.out.println("  Culture : " + nom);
             System.out.println("  Date de plantation : " + datePlantation);
             System.out.println("  Date de recolte    : " + dateRecolte);
             displayStadeCroiss();
             if (exigPed != null)
                 System.out.println("  Exigences : " + exigPed);
-        }catch (NullPointerException e){
-            System.out.println("  Culture Null");
-        }
+
 
     }
 }
