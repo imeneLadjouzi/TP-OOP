@@ -7,8 +7,8 @@ public class ZoneCulture extends Zone {
     private Culture culture;
     static private int nbSeq=0;
 
-    public ZoneCulture( String name, Status status, Culture culture) {
-        super( name, status);
+    public ZoneCulture( String name, Status status, Culture culture, Ferme ferme) {
+        super( name, status,ferme);
         this.culture=culture;
     }
 

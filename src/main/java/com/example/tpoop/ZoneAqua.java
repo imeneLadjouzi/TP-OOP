@@ -6,8 +6,8 @@ public class ZoneAqua extends Zone {
     private ProgAlimentaire progAlim;
     private static int nbSeq = 0;
 
-    public ZoneAqua(String name, Status status, String espece) {
-        super(name, status);
+    public ZoneAqua(String name, Status status, String espece,Ferme ferme) {
+        super(name, status, ferme);
         this.espece = espece;
         this.nbAnimaux = 0;
     }

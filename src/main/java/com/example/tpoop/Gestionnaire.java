@@ -21,12 +21,12 @@ public class Gestionnaire {
             case AQUA -> {
                 Scanner sc = new Scanner(System.in);
                 System.out.print("Espece habitant la zone: "); String espece = sc.nextLine();
-                z = new ZoneAqua(nom, Status.ACTIF,espece);
+                z = new ZoneAqua(nom, Status.ACTIF,espece,ferme);
                 ferme.ajouterZone(z);
             }
             case CULTURE -> {
 
-                z = new ZoneCulture(nom, Status.ACTIF,null);
+                z = new ZoneCulture(nom, Status.ACTIF,null,ferme);
                 ferme.ajouterZone(z);
             }
             case ELEVAGE -> {
@@ -35,7 +35,7 @@ public class Gestionnaire {
                     System.out.print("Type d'animaux habitant la zone (RUMINANT-VOLAILLE): ");
                     String s = sc.nextLine().trim().toUpperCase();
                     TypeAnimal ta = TypeAnimal.valueOf(s);
-                    z = new ZoneElevage(nom, Status.ACTIF, ta);
+                    z = new ZoneElevage(nom, Status.ACTIF, ta,ferme);
                     ferme.ajouterZone(z);
                 } catch (IllegalArgumentException e) {
                     System.out.println("Type d'animal invalide.");

@@ -8,4 +8,5 @@ public abstract class Capteur_num extends Capteurs {
     }
 
     public abstract Map<String, Object> send_values();
+    //abstract public void configurer(double minlong, double maxlong, double minlat, double maxlat);
 }

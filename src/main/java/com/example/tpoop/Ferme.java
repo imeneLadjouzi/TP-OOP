@@ -65,6 +65,10 @@ public class Ferme {
                 .orElse(null);
     }
 
+    public void ajouterAlerte(Alerte alerte) {
+        alertes.add(alerte);
+    }
+
     /**
      * Effectue un relevé sur un capteur et génère une alerte si hors seuils.
      */
@@ -73,16 +77,7 @@ public class Ferme {
             System.out.println("Capteur '" + capteur.getCode() + "' non actif, releve ignore.");
             return null;
         }
-        Releve r = capteur.effectuerReleve();
-        System.out.println("Releve effectue : " + r);
-        // Générer une alerte si nécessaire
-        if (r.getNiveauReleve() != Niveau_gravite.INFO) {
-            String msg = "Capteur " + capteur.getCode() + " hors seuils : " + r.getValeurs();
-            Alerte alerte = new Alerte(r, r.getNiveauReleve(), msg,r.getCapteur().getLocation());
-            alertes.add(alerte);
-            System.out.println("  >> ALERTE generee : " + alerte);
-        }
-        return r;
+        return capteur.effectuerReleve();
     }
 
     public String tableauDeBordCapteurs() {
@@ -97,8 +92,8 @@ public class Ferme {
                 String indicateur = c.getStatus() == Status.ACTIF ? "[ACTIF]" :
                         c.getStatus() == Status.SUSPENDU ? "[SUSP.]" : "[DEFAIL]";
                 sb.append("  ").append(indicateur).append(" ").append(c.getCode())
-                        .append(" (").append(c.getClass().getSimpleName()).append(")")
-                        .append(" | Seuils: ").append(c.getPlageSeuils());
+                        .append(" (").append(c.getClass().getSimpleName()).append(")");
+                        //.append(" | Seuils: ").append(c.getPlageSeuils());
                 if (!c.getHistorique().isEmpty()) {
                     Releve dernierReleve = c.getHistorique().get(c.getHistorique().size() - 1);
                     Niveau_gravite niv = dernierReleve.getNiveauReleve();
