@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Zone implements Suspendable {
+    protected Ferme ferme;
     protected String code;
     protected String name;
     protected Status status;
@@ -12,12 +13,18 @@ public abstract class Zone implements Suspendable {
 
     abstract public String genererCode();
 
-    public Zone(String name, Status status) {
+    public Zone(String name, Status status, Ferme ferme) {
+
         this.name = name;
         this.code = this.genererCode();
         this.status = status;
         this.productionRecord = new ArrayList<>();
         this.capteurs = new ArrayList<>();
+        this.ferme = ferme;
+    }
+
+    public Ferme getFerme() {
+        return ferme;
     }
 
     public void display() {

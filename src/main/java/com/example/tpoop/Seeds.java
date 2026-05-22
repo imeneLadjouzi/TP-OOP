@@ -10,15 +10,15 @@ public class Seeds {
 
     public static void initialiser(Ferme ferme) {
         // ── ZONES ──────────────────────────────────────────────────────────
-        ZoneCulture zc1 = new ZoneCulture("Champ Ble Nord",  Status.ACTIF,null);
-        ZoneCulture zc2 = new ZoneCulture("Serre Tomates",   Status.ACTIF,null);
-        ZoneElevage ze1 = new ZoneElevage("Etable Vaches",   Status.ACTIF,TypeAnimal.RUMINANT);
-        ZoneElevage ze2 = new ZoneElevage("Poulailler",      Status.ACTIF,TypeAnimal.VOLAILLE);
-        ZoneAqua    za1 = new ZoneAqua   ("Bassin Tilapia",  Status.ACTIF,"sardine");
+        ZoneCulture zc1 = new ZoneCulture("Champ Ble Nord",  Status.ACTIF,null,ferme);
+        ZoneCulture zc2 = new ZoneCulture("Serre Tomates",   Status.ACTIF,null,ferme);
+        ZoneElevage ze1 = new ZoneElevage("Etable Vaches",   Status.ACTIF,TypeAnimal.RUMINANT,ferme);
+        ZoneElevage ze2 = new ZoneElevage("Poulailler",      Status.ACTIF,TypeAnimal.VOLAILLE,ferme);
+        ZoneAqua    za1 = new ZoneAqua   ("Bassin Tilapia",  Status.ACTIF,"sardine",ferme);
 
         // ── CULTURES ───────────────────────────────────────────────────────
-        ExigPedologiques exigBle    = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150, 400,700);
-        ExigPedologiques exigTomate = new ExigPedologiques(5.5, 7.0, 60, 80, 80, 200, 600,900);
+        ExigPedologiques exigBle    = new ExigPedologiques(6.0, 7.5, 30, 70, 50, 150);
+        ExigPedologiques exigTomate = new ExigPedologiques(5.5, 7.0, 60, 80, 80, 200);
         Culture ble    = new Culture("Ble",    "2025-10-01", "2026-06-15", StadeCroissance.CROISSANCE, exigBle);
         Culture tomate = new Culture("Tomate", "2026-03-01", "2026-07-30", StadeCroissance.SEMI,       exigTomate);
         zc1.setCulture(ble);
@@ -42,19 +42,15 @@ public class Seeds {
 
         // ── CAPTEURS ───────────────────────────────────────────────────────
         Cap_env       captEnv  = new Cap_env("CE01",  zc1, Status.ACTIF, 22.0, 65.0, 12.0);
-        captEnv.configurerSeuils(0, 40);
 
         Cap_sol       captSol  = new Cap_sol("CS01",  zc1, Status.ACTIF, 80.0, 55.0, 6.8);
-        captSol.configurerSeuils(0, 14);
 
         Cap_biometrique captBio = new Cap_biometrique("CB01", ze1, Status.ACTIF, 38.5, 45.0);
-        captBio.configurerSeuils(37.5, 39.5);
 
         Cap_aqua      captAqua = new Cap_aqua("CA01", za1, Status.ACTIF, 26.0, 7.5, 7.2);
-        captAqua.configurerSeuils(0, 35);
 
         Capteur_GPS   captGPS  = new Capteur_GPS("GPS01", zc1, Status.ACTIF,
-                new PositionGeographique(36.7, 3.1));
+                new PositionGeographique(36.7, 3.1),new Animal(new EspeceAnim(TypeAnimal.VOLAILLE,"vache"),5,50,EtatSante.SAIN));
 
         // Affectation capteurs → zones
         zc1.ajouterCapteur(captEnv);

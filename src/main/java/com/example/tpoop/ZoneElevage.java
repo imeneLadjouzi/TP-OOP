@@ -9,8 +9,8 @@ public class ZoneElevage extends Zone {
     private TypeAnimal ta;
     private static int nbSeq = 0;
 
-    public ZoneElevage(String name, Status status, TypeAnimal ta) {
-        super(name, status);
+    public ZoneElevage(String name, Status status, TypeAnimal ta, Ferme ferme) {
+        super(name, status,ferme);
         this.animaux = new ArrayList<>();
         this.ta=ta;
     }

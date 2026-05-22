@@ -148,9 +148,7 @@ public class Main {
                     double phMin = lireDouble("pH min : "), phMax = lireDouble("pH max : ");
                     double hMin  = lireDouble("Humidite min (%) : "), hMax = lireDouble("Humidite max (%) : ");
                     double azMin = lireDouble("Azote min : "), azMax = lireDouble("Azote max : ");
-                    double pluvMin = lireDouble("Pluviometrie min : ");
-                    double pluvMax = lireDouble("Pluviometrie max : ");
-                    ExigPedologiques exig = new ExigPedologiques(phMin, phMax, hMin, hMax, azMin, azMax, pluvMin, pluvMax);
+                    ExigPedologiques exig = new ExigPedologiques(phMin, phMax, hMin, hMax, azMin, azMax);
                     try{
                         g.affecterCulture(zc, new Culture(nom, dp, dr, stade, exig));
                     }catch (IllegalStateException e){
@@ -290,9 +288,50 @@ public class Main {
                 }
                 case 6 -> {
                     Capteurs c = choisirCapteur(); if (c == null) break;
-                    double min = lireDouble("Seuil min : ");
-                    double max = lireDouble("Seuil max : ");
-                    c.configurerSeuils(min, max);
+                    if (c instanceof Capteur_GPS){
+                        double min = lireDouble("Longitude min : ");
+                        double max = lireDouble("Longitude max : ");
+                        double min2 = lireDouble("Latitude min : ");
+                        double max2 = lireDouble("Latitude max : ");
+                        ((Capteur_GPS) c).configurer(min, max, min2, max2);
+                    }
+                    else if (c instanceof Cap_aqua) {
+                        ((Cap_aqua) c).configurer(
+                                lireDouble("Température min : "),
+                                lireDouble("Température max : "),
+                                lireDouble("Oxygène min : "),
+                                lireDouble("Oxygène max : "),
+                                lireDouble("Ph min : "),
+                                lireDouble("Ph max : "));
+                    }
+                    else if(c instanceof Cap_biometrique){
+                        ((Cap_biometrique) c).configurer(
+                                lireDouble("Température min : "),
+                                lireDouble("Température max : "),
+                                lireDouble("Activité min : "),
+                                lireDouble("Activité max : "));
+                    }
+                    else if (c instanceof Cap_env) {
+                        ((Cap_env) c).configurer(
+                                lireDouble("Température min : "),
+                                lireDouble("Température max : "),
+                                lireDouble("Humidité min : "),
+                                lireDouble("Humidité max : "),
+                                lireDouble("Pluviométrie min : "),
+                                lireDouble("Pluviométrie max : "));
+                    }
+                    else if (c instanceof Cap_sol){
+                        ((Cap_sol) c).configurerHum(
+                                lireDouble("Humidité min : "),
+                                lireDouble("Humidité max : "));
+                        ((Cap_sol) c).configurerTemp(
+                                lireDouble("Température min : "),
+                                lireDouble("Température max : "));
+                        ((Cap_sol) c).configurerPh(
+                                lireDouble("Ph min : "),
+                                lireDouble("Ph max : "));
+                    }
+
                     System.out.println("Seuils configures.");
                 }
                 case 0 -> { break loop; }
@@ -318,7 +357,8 @@ public class Main {
             case 4 -> capteur = new Cap_biometrique(code, zone, Status.ACTIF,
                     lireDouble("Temp corporelle : "), lireDouble("Activite/min : "));
             case 5 -> capteur = new Capteur_GPS(code, zone, Status.ACTIF,
-                    new PositionGeographique(lireDouble("Latitude : "), lireDouble("Longitude : ")));
+                    new PositionGeographique(lireDouble("Latitude : "), lireDouble("Longitude : ")),choisirAnimal(choisirZoneElevage()));
+
             default -> { System.out.println("Type invalide."); return; }
         }
         try{
