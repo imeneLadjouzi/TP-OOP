@@ -341,31 +341,81 @@ public class Main {
     }
 
     static void ajouterCapteur() {
-        Zone zone = choisirZone(); if (zone == null) return;
+       // Zone zone = choisirZone(); if (zone == null) return;
         System.out.print("Code du capteur : "); String code = sc.nextLine();
         System.out.println("Type : 1=Env  2=Sol  3=Aqua  4=Biometrique  5=GPS");
         Capteurs capteur = null;
         switch (lireInt("")) {
-            case 1 -> capteur = new Cap_env(code, zone, Status.ACTIF,
-                    lireDouble("Temp initiale : "),
-                    lireDouble("Humidite initiale : "),
-                    lireDouble("Pluviometrie initiale : "));
-            case 2 -> capteur = new Cap_sol(code, zone, Status.ACTIF,
-                    lireDouble("Azote : "), lireDouble("Humidite : "), lireDouble("pH : "));
-            case 3 -> capteur = new Cap_aqua(code, zone, Status.ACTIF,
-                    lireDouble("Temp eau : "), lireDouble("Oxygene : "), lireDouble("pH : "));
-            case 4 -> capteur = new Cap_biometrique(code, zone, Status.ACTIF,
-                    lireDouble("Temp corporelle : "), lireDouble("Activite/min : "));
-            case 5 -> capteur = new Capteur_GPS(code, zone, Status.ACTIF,
-                    new PositionGeographique(lireDouble("Latitude : "), lireDouble("Longitude : ")),choisirAnimal(choisirZoneElevage()));
+            case 1 -> {
+                try{
+                    ZoneCulture zone = choisirZoneCulture(); if (zone == null) return;
+                    capteur = new Cap_env(code, zone, Status.ACTIF,
+                            lireDouble("Temp initiale : "),
+                            lireDouble("Humidite initiale : "),
+                            lireDouble("Pluviometrie initiale : "));
+                    g.ajouterCapteur(zone, capteur);
+                    System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
+                }catch (IllegalStateException e){
+                    System.out.println("Erreur : " + e.getMessage());
+                }
+            }
+            case 2 -> {
+                try{
+                    ZoneCulture zone = choisirZoneCulture(); if (zone == null) return;
+                    capteur = new Cap_sol(code, zone, Status.ACTIF,
+                            lireDouble("Azote : "),
+                            lireDouble("Humidite : "),
+                            lireDouble("pH : "));
+                    g.ajouterCapteur(zone, capteur);
+                    System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
+
+                }catch (IllegalStateException e){
+                    System.out.println("Erreur : " + e.getMessage());
+                }
+
+            }
+            case 3 -> {
+                try{
+                    ZoneAqua zone = choisirZoneAqua();
+                    if (zone == null) return;
+                    capteur = new Cap_aqua(code, zone, Status.ACTIF,
+                            lireDouble("Temp eau : "), lireDouble("Oxygene : "), lireDouble("pH : "));
+                    g.ajouterCapteur(zone, capteur);
+                    System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
+
+                }catch(IllegalStateException e){
+                    System.out.println("Erreur : " + e.getMessage());
+                }
+
+            }
+            case 4 -> {
+                try{
+                    ZoneElevage zone = choisirZoneElevage();
+                    if (zone == null) return;
+                    capteur = new Cap_biometrique(code, zone, Status.ACTIF,
+                            lireDouble("Temp corporelle : "), lireDouble("Activite/min : "));
+                    g.ajouterCapteur(zone, capteur);
+                    System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
+
+                }catch(IllegalStateException e){
+                    System.out.println("Erreur : " + e.getMessage());
+                }
+            }
+            case 5 -> {
+                try{
+                    ZoneElevage zone = choisirZoneElevage();
+                    if (zone == null) return;
+                    capteur = new Capteur_GPS(code, zone, Status.ACTIF,
+                            new PositionGeographique(lireDouble("Latitude : "), lireDouble("Longitude : ")), choisirAnimal((ZoneElevage) zone));
+                    g.ajouterCapteur(zone, capteur);
+                    System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
+                }catch (IllegalStateException e){
+                    System.out.println("Erreur : " + e.getMessage());
+                }
+
+            }
 
             default -> { System.out.println("Type invalide."); return; }
-        }
-        try{
-            g.ajouterCapteur(zone, capteur);
-            System.out.println("Capteur " + code + " ajoute a la zone " + zone.getName() + ".");
-        }catch (IllegalStateException e){
-            System.out.println("Erreur : " + e.getMessage());
         }
 
     }
@@ -512,6 +562,17 @@ public class Main {
         if (idx < 0 || idx >= zones.size()) { System.out.println("Index invalide."); return null; }
         return (ZoneElevage) zones.get(idx);
     }
+    static ZoneAqua choisirZoneAqua() {
+        List<Zone> zones = ferme.getZones().stream().filter(z -> z instanceof ZoneAqua).toList();
+        if (zones.isEmpty()) { System.out.println("Aucune zone aquacole."); return null; }
+        System.out.println("Zones Aquacoles :");
+        for (int i = 0; i < zones.size(); i++)
+            System.out.printf("  %d. [%s] %s%n", i+1, zones.get(i).getCode(), zones.get(i).getName());
+        int idx = lireInt("Choisir : ") - 1;
+        if (idx < 0 || idx >= zones.size()) { System.out.println("Index invalide."); return null; }
+        return (ZoneAqua) zones.get(idx);
+    }
+
 
     static Capteurs choisirCapteur() {
         List<Capteurs> capteurs = ferme.getTousLesCapteurs();

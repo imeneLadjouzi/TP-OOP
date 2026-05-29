@@ -1,14 +1,5 @@
 package com.example.tpoop;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.Label;
-
+// HelloController kept for compatibility; actual UI logic is in MainController.java
 public class HelloController {
-    @FXML
-    private Label welcomeText;
-
-    @FXML
-    protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to JavaFX Application!");
-    }
 }
