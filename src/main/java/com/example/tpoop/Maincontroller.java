@@ -415,6 +415,7 @@ class MainController {
                     showPage("zones");
                 });
             } else {
+                //ajouter culture
                 ferme.ajouterZone(new ZoneCulture(tfNom.getText(), Status.ACTIF, null, ferme));
                 showPage("zones");
             }
@@ -554,7 +555,7 @@ class MainController {
             Button bExig = btn("Exigences sol", STYLE_BTN_GHOST);
             bExig.setOnAction(e -> showExigPedologiques(zc));
 
-            Button bAff = btn("Affecter culture", STYLE_BTN_SECONDARY);
+            Button bAff = btn("Enregistrer culture", STYLE_BTN_SECONDARY);
             bAff.setOnAction(e -> affecterCultureDialog(zc));
 
             btns.getChildren().addAll(bExig, bAff);
@@ -689,7 +690,7 @@ class MainController {
             }
 
             HBox bottom = new HBox(8);
-            Button bAff = btn("Affecter / Modifier culture", STYLE_BTN_PRIMARY);
+            Button bAff = btn("Enregistrer / Modifier culture", STYLE_BTN_PRIMARY);
             bAff.setOnAction(e -> { affecterCultureDialog(zc); showPage("cultures"); });
             bottom.getChildren().add(bAff);
             card.getChildren().add(bottom);
@@ -783,7 +784,7 @@ class MainController {
             Button bAdd = btn("Ajouter un animal", STYLE_BTN_PRIMARY);
             bAdd.setOnAction(e -> { ajouterAnimalDialog(ze); showPage("animaux"); });
 
-            Button bEvt = btn("Evénement sanitaire", STYLE_BTN_SECONDARY);
+            Button bEvt = btn("Consigner evénement sanitaire", STYLE_BTN_SECONDARY);
             bEvt.setOnAction(e -> {
                 if (ta.getSelectionModel().getSelectedItem() == null) { info("Veuillez sélectionner un animal."); return; }
                 evenementSanitaireDialog(ta.getSelectionModel().getSelectedItem());
@@ -1145,7 +1146,7 @@ class MainController {
 
     private void affecterCultureDialog(ZoneCulture zc) {
         Dialog<ButtonType> d = new Dialog<>();
-        d.setTitle("Affecter une culture — " + zc.getName());
+        d.setTitle("Enregistrer une culture — " + zc.getName());
         d.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         d.getDialogPane().setStyle("-fx-background-color:#ffffff;-fx-font-family:'Segoe UI',system;");
 
