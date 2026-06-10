@@ -22,6 +22,25 @@ public class ExigPedologiques {
           azote=new PlageSeuils(azoteMin,azoteMax);
      }
 
+     public double getPhMax(){
+          return ph.getMax();
+     }
+     public double getHumMax(){
+          return humidite.getMax();
+     }
+     public double getAzoteMax(){
+          return azote.getMax();
+     }
+     public double getPhMin(){
+          return ph.getMin();
+     }
+     public double getHumMin(){
+          return humidite.getMin();
+     }
+     public double getAzoteMin(){
+          return azote.getMin();
+     }
+
      public Niveau_gravite evaluerPh(double valPh){
           return ph.evaluer(valPh);
      }
