@@ -14,7 +14,7 @@ import java.util.*;
  *   String, Double, Boolean, null pour les scalaires
  *
  * Usage :
- *   Map<String,Object> root = MiniJson.parseFile(Path.of("farm_simulation.json"));
+ *   Map<String,Object> root = MiniJson.parseFile(Path.of("farm_data.json"));
  *   String nom = MiniJson.str(root, "ferme.nom");
  *   List<Object> zones = MiniJson.list(root, "ferme.zones");
  */

@@ -8,8 +8,8 @@ public class Capteur_GPS extends Capteurs{
     private Animal animal;
     private PositionGeographique position;
     private static int nbSeq=1;
-    private PlageSeuils longitude= new PlageSeuils(0,0);
-    private PlageSeuils latitude=new PlageSeuils(0,0);
+    PlageSeuils longitude= new PlageSeuils(0,0);
+    PlageSeuils latitude=new PlageSeuils(0,0);
 
     public Capteur_GPS( Zone location, Status status, Animal animal) {
         super("CapGPS0"+nbSeq, location, status, TypeCapteur.GPS);

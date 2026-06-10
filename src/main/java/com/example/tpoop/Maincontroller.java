@@ -17,6 +17,15 @@ import javafx.scene.text.*;
 import javafx.stage.*;
 import javafx.util.Callback;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.util.Duration;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -142,22 +151,78 @@ class MainController {
 
     // ── State ─────────────────────────────────────────────────────────
     private final Stage stage;
-    private final Ferme ferme;
-    private final Gestionnaire g;
+    private Ferme ferme;
+    private Gestionnaire g;
     private BorderPane root;
     private String activePage = "ferme";
 
     // Track expanded zones (by code)
     private final Set<String> expandedZones = new HashSet<>();
 
+    // ── Persistence paths ─────────────────────────────────────────────
+    private static final Path SEED_PATH = Paths.get("farm_data.json");
+    private static final Path SAVE_PATH = Paths.get("farm_save.json");
+
+    // ── Periodic sensor timer ─────────────────────────────────────────
+    private Timeline sensorTimer;
+    // Map: type capteur ("ENV","SOL","AQUA","BIOM","GPS") -> pool de valeurs seed
+    private Map<String, List<Map<String, Object>>> seedValuesByType = new LinkedHashMap<>();
+    // Index circulaire par type de capteur
+    private final Map<String, Integer> seedIndexByType = new LinkedHashMap<>();
+    // Interval in seconds between attribute updates
+    private static final int SENSOR_INTERVAL_SECONDS = 10;
+
     public MainController(Stage stage) {
         this.stage = stage;
-        this.ferme = new Ferme("Ferme Principale");
-        this.g = new Gestionnaire(ferme);
-        Seeds.initialiser(ferme);
+        // ferme & gestionnaire seront initialisés dans show() après le choix utilisateur
+        this.ferme = null;
+        this.g     = null;
     }
 
+    // ─────────────────────────────────────────────────────────────────
+    // DÉMARRAGE : dialogue de choix SEED vs SAVE
+    // ─────────────────────────────────────────────────────────────────
     public void show() {
+        // 1. Choisir la source de données
+        boolean hasSave = Files.exists(SAVE_PATH);
+        boolean loadFromSave = false;
+
+        if (hasSave) {
+            Alert choiceAlert = new Alert(Alert.AlertType.CONFIRMATION);
+            choiceAlert.setTitle("GreenField — Démarrage");
+            choiceAlert.setHeaderText("Reprendre la session précédente ?");
+            choiceAlert.setContentText(
+                    "Un fichier de sauvegarde existe (farm_save.json).\n\n" +
+                            "• Continuer : charger la dernière session sauvegardée\n" +
+                            "• Recommencer : repartir depuis les données initiales (farm_data.json)");
+            ButtonType btnContinue   = new ButtonType("Continuer",   ButtonBar.ButtonData.YES);
+            ButtonType btnRestart    = new ButtonType("Recommencer", ButtonBar.ButtonData.NO);
+            choiceAlert.getButtonTypes().setAll(btnContinue, btnRestart);
+            choiceAlert.getDialogPane().setStyle(
+                    "-fx-background-color:#ffffff;-fx-font-family:'Segoe UI',system;-fx-font-size:13px;");
+            Optional<ButtonType> result = choiceAlert.showAndWait();
+            loadFromSave = result.isPresent() && result.get() == btnContinue;
+        }
+
+        // 2. Charger la ferme
+        try {
+            Path srcPath = (loadFromSave && hasSave) ? SAVE_PATH : SEED_PATH;
+            ferme = FarmPersistence.load(srcPath);
+        } catch (Exception e) {
+            // fallback : ferme vide
+            ferme = new Ferme("Ferme Principale");
+            System.err.println("Erreur chargement ferme: " + e.getMessage());
+        }
+        g = new Gestionnaire(ferme);
+
+        // 3. Charger les valeurs seed pour les capteurs périodiques
+        try {
+            seedValuesByType = FarmPersistence.loadSeedSensorValues(SEED_PATH);
+        } catch (Exception e) {
+            System.err.println("Erreur chargement valeurs seed: " + e.getMessage());
+        }
+
+        // 4. Construire l'interface
         root = new BorderPane();
         root.setStyle("-fx-background-color:" + COLOR_PAGE_BG + ";");
         root.setLeft(buildSidebar());
@@ -165,7 +230,130 @@ class MainController {
         Scene scene = new Scene(root, 1280, 800);
         stage.setTitle("GreenField — Gestion de Ferme");
         stage.setScene(scene);
+
+        // 5. Sauvegarder à la fermeture
+        stage.setOnCloseRequest(ev -> {
+            stopSensorTimer();
+            saveToFile();
+        });
+
         stage.show();
+
+        // 6. Démarrer le timer de relevés périodiques
+        startSensorTimer();
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // SAUVEGARDE
+    // ─────────────────────────────────────────────────────────────────
+    private void saveToFile() {
+        try {
+            FarmPersistence.save(ferme, SAVE_PATH);
+            System.out.println("Ferme sauvegardée dans " + SAVE_PATH.toAbsolutePath());
+        } catch (IOException e) {
+            System.err.println("Erreur sauvegarde: " + e.getMessage());
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // TIMER DE RELEVÉS PÉRIODIQUES
+    // ─────────────────────────────────────────────────────────────────
+    private void startSensorTimer() {
+        stopSensorTimer();
+        sensorTimer = new Timeline(new KeyFrame(
+                Duration.seconds(SENSOR_INTERVAL_SECONDS),
+                ev -> performPeriodicReadings()
+        ));
+        sensorTimer.setCycleCount(Timeline.INDEFINITE);
+        sensorTimer.play();
+        System.out.println("Timer capteurs démarré (" + SENSOR_INTERVAL_SECONDS + "s).");
+    }
+
+    private void stopSensorTimer() {
+        if (sensorTimer != null) {
+            sensorTimer.stop();
+            sensorTimer = null;
+        }
+    }
+
+    /**
+     * Met à jour périodiquement les attributs de chaque capteur actif à partir
+     * du pool de valeurs seed de son TYPE (parcours circulaire par type).
+     * Fonctionne pour tous les capteurs, qu'ils viennent de farm_data.json
+     * ou qu'ils aient été ajoutés manuellement : seul le type compte.
+     * Les relevés restent déclenchés manuellement par l'utilisateur.
+     */
+    private void performPeriodicReadings() {
+        for (Capteurs c : ferme.getTousLesCapteurs()) {
+            if (c.getStatus() != Status.ACTIF) continue;
+
+            // Clé du pool = type JSON du capteur
+            String typeKey = capteurTypeKey(c);
+            List<Map<String, Object>> pool = seedValuesByType.get(typeKey);
+            if (pool == null || pool.isEmpty()) continue;
+
+            // Index circulaire partagé par type
+            int idx = seedIndexByType.getOrDefault(typeKey, 0);
+            Map<String, Object> v = pool.get(idx);
+            seedIndexByType.put(typeKey, (idx + 1) % pool.size());
+
+            // Mettre à jour les attributs du capteur via ses setters
+            applySeedValues(c, v);
+        }
+        Platform.runLater(() -> showPage(activePage));
+    }
+
+    /**
+     * Retourne la clé de type utilisée dans seedValuesByType,
+     * identique aux clés JSON de farm_data.json.
+     */
+    private String capteurTypeKey(Capteurs c) {
+        if (c instanceof Cap_env)         return "ENV";
+        if (c instanceof Cap_sol)         return "SOL";
+        if (c instanceof Cap_aqua)        return "AQUA";
+        if (c instanceof Cap_biometrique) return "BIOM";
+        if (c instanceof Capteur_GPS)     return "GPS";
+        return "UNKNOWN";
+    }
+
+    /**
+     * Applique les valeurs directement sur les attributs du capteur
+     * via les setters de chaque sous-classe. Aucun relevé déclenché ici.
+     */
+    private void applySeedValues(Capteurs c, Map<String, Object> v) {
+        if (c instanceof Cap_env ce) {
+            if (v.containsKey("temperature"))  ce.setTemp(toDouble(v.get("temperature")));
+            if (v.containsKey("humidite"))     ce.setHumidity(toDouble(v.get("humidite")));
+            if (v.containsKey("pluviometrie")) ce.setPluvi(toDouble(v.get("pluviometrie")));
+
+        } else if (c instanceof Cap_sol cs) {
+            if (v.containsKey("ph"))       cs.setPh(toDouble(v.get("ph")));
+            if (v.containsKey("humidite")) cs.setHumidity(toDouble(v.get("humidite")));
+            if (v.containsKey("azote"))    cs.setAzote(toDouble(v.get("azote")));
+
+        } else if (c instanceof Cap_aqua ca) {
+            if (v.containsKey("temperature")) ca.setTemp(toDouble(v.get("temperature")));
+            if (v.containsKey("oxygene"))     ca.setOxygen(toDouble(v.get("oxygene")));
+            if (v.containsKey("ph"))          ca.setPh(toDouble(v.get("ph")));
+
+        } else if (c instanceof Cap_biometrique cb) {
+            if (v.containsKey("temperature_corporelle")) cb.setTempCorporelle(toDouble(v.get("temperature_corporelle")));
+            if (v.containsKey("activite_par_minute"))    cb.setActivityPerMin(toDouble(v.get("activite_par_minute")));
+
+        } else if (c instanceof Capteur_GPS cg) {
+            if (v.containsKey("longitude") && v.containsKey("latitude")) {
+                cg.updatePosition(new PositionGeographique(
+                        toDouble(v.get("longitude")),
+                        toDouble(v.get("latitude"))
+                ));
+            }
+        }
+    }
+
+    /** Conversion sûre Object -> double. */
+    private double toDouble(Object o) {
+        if (o instanceof Number n) return n.doubleValue();
+        try { return Double.parseDouble(o.toString()); } catch (Exception e) { return 0.0; }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -213,13 +401,53 @@ class MainController {
         VBox.setVgrow(spacer, Priority.ALWAYS);
         sb.getChildren().add(spacer);
 
-        VBox bottom = new VBox(0);
+        VBox bottom = new VBox(6);
         bottom.setStyle("-fx-border-color:rgba(255,255,255,0.08) transparent transparent transparent;-fx-border-width:1 0 0 0;");
-        bottom.setPadding(new Insets(12, 0, 12, 0));
+        bottom.setPadding(new Insets(12, 16, 12, 16));
+
+        // Indicateur timer capteurs
+        Label lTimer = new Label("⏱ Relevés auto : " + SENSOR_INTERVAL_SECONDS + "s");
+        lTimer.setStyle("-fx-text-fill:rgba(255,255,255,0.40);-fx-font-size:10px;-fx-font-family:'Segoe UI',system;");
+
+        // Bouton Sauvegarder
+        Button btnSave = new Button("💾  Sauvegarder");
+        btnSave.setMaxWidth(Double.MAX_VALUE);
+        btnSave.setStyle(
+                "-fx-background-color:" + COLOR_SIDEBAR_HOVER + ";" +
+                        "-fx-text-fill:rgba(255,255,255,0.85);" +
+                        "-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;" +
+                        "-fx-cursor:hand;" +
+                        "-fx-background-radius:4;"
+        );
+        btnSave.setOnMouseEntered(e -> btnSave.setStyle(
+                "-fx-background-color:" + COLOR_ACCENT + ";" +
+                        "-fx-text-fill:#ffffff;" +
+                        "-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;" +
+                        "-fx-cursor:hand;" +
+                        "-fx-background-radius:4;"
+        ));
+        btnSave.setOnMouseExited(e -> btnSave.setStyle(
+                "-fx-background-color:" + COLOR_SIDEBAR_HOVER + ";" +
+                        "-fx-text-fill:rgba(255,255,255,0.85);" +
+                        "-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;" +
+                        "-fx-cursor:hand;" +
+                        "-fx-background-radius:4;"
+        ));
+        btnSave.setOnAction(e -> {
+            saveToFile();
+            info("Ferme sauvegardée dans farm_save.json");
+        });
+
         Label lVersion = new Label("v1.0.0");
-        lVersion.setPadding(new Insets(0, 0, 0, 20));
-        lVersion.setStyle("-fx-text-fill:rgba(255,255,255,0.25);-fx-font-size:11px;-fx-font-family:'Segoe UI',system;");
-        bottom.getChildren().add(lVersion);
+        lVersion.setStyle("-fx-text-fill:rgba(255,255,255,0.20);-fx-font-size:10px;-fx-font-family:'Segoe UI',system;");
+
+        bottom.getChildren().addAll(lTimer, btnSave, lVersion);
         sb.getChildren().add(bottom);
 
         return sb;
@@ -708,8 +936,8 @@ class MainController {
 
         // Action buttons
         HBox acts = new HBox(8);
-      //  Button bAff = btn("Affecter culture", STYLE_BTN_PRIMARY);
-       // bAff.setOnAction(e -> { affecterCultureDialog(zc, false); showPage("zones"); });
+        //  Button bAff = btn("Affecter culture", STYLE_BTN_PRIMARY);
+        // bAff.setOnAction(e -> { affecterCultureDialog(zc, false); showPage("zones"); });
         Button bMod = btn("Modifier culture", STYLE_BTN_SECONDARY);
         bMod.setOnAction(e -> { affecterCultureDialog(zc, true); showPage("zones"); });
         // Point 2: editable exig pédologiques
@@ -950,11 +1178,10 @@ class MainController {
 
             // Point 5: separate Affecter and Modifier buttons
             HBox bottom = new HBox(8);
-            Button bAff = btn("Affecter culture", STYLE_BTN_PRIMARY);
-            bAff.setOnAction(e -> { affecterCultureDialog(zc, false); showPage("cultures"); });
-            Button bMod = btn("Modifier culture", STYLE_BTN_SECONDARY);
+
+            Button bMod = btn("Modifier culture", STYLE_BTN_PRIMARY);
             bMod.setOnAction(e -> { affecterCultureDialog(zc, true); showPage("cultures"); });
-            bottom.getChildren().addAll(bAff, bMod);
+            bottom.getChildren().addAll( bMod);
             card.getChildren().add(bottom);
 
             page.getChildren().add(card);

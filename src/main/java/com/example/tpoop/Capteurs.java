@@ -20,37 +20,22 @@ public abstract class Capteurs implements Suspendable {
     }
 
     public abstract Map<String, Object> send_values();
-
-    /**
-     * Effectue un relevé, l'enregistre dans l'historique et génère une alerte si nécessaire.
-     */
     abstract public Releve effectuerReleve();
 
-    public void suspendre() {
-        status = Status.SUSPENDU;
-    }
-
-    public void activer() {
-        status = Status.ACTIF;
-    }
-
-    public void defaulter() {
-        status = Status.DEFAILLANT;
-    }
+    public void suspendre()  { status = Status.SUSPENDU;   }
+    public void activer()    { status = Status.ACTIF;       }
+    public void defaulter()  { status = Status.DEFAILLANT;  }
 
     @Override
-    public void setStatus(Status status) {
-        this.status = status;
-    }
+    public void setStatus(Status status) { this.status = status; }
 
-    public void addReleve(Releve releve) {
-        historique.add(releve);
-    }
-    public String getCode() { return code; }
-    public Zone getLocation() { return location; }
-    public Status getStatus() { return status; }
-    public List<Releve> getHistorique() { return historique; }
-    public TypeCapteur getType() { return type; }
+    public void addReleve(Releve releve) { historique.add(releve); }
+
+    public String getCode()            { return code;       }
+    public Zone getLocation()          { return location;   }
+    public Status getStatus()          { return status;     }
+    public List<Releve> getHistorique(){ return historique; }
+    public TypeCapteur getType()       { return type;       }
 
     @Override
     public String toString() {

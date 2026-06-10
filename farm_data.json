@@ -1,0 +1,174 @@
+{
+  "ferme": {
+    "nom": "Ferme Principale"
+  },
+  "zones": [
+    {
+      "code": "ZC001",
+      "type": "CULTURE",
+      "nom": "Champ Ble Nord",
+      "status": "ACTIF",
+      "culture": {
+        "nom": "Ble",
+        "datePlantation": "2025-10-01",
+        "dateRecolte": "2026-06-15",
+        "stadeCroissance": "CROISSANCE",
+        "exigPedologiques": {
+          "phMin": 6.0, "phMax": 7.5,
+          "humiditeMin": 30.0, "humiditeMax": 70.0,
+          "azoteMin": 50.0, "azoteMax": 150.0
+        }
+      },
+      "capteurs": [
+        {
+          "code": "CapEnv00",
+          "type": "ENV",
+          "status": "ACTIF",
+          "seuils": { "tempMin": 8.0, "tempMax": 32.0, "humMin": 40.0, "humMax": 80.0, "pluviMin": 500.0, "pluviMax": 1200.0 },
+          "historique_valeurs": [
+            { "temp": 15.0, "humidite": 55.0, "pluvi": 650.0 },
+            { "temp": 18.2, "humidite": 60.3, "pluvi": 700.0 },
+            { "temp": 22.5, "humidite": 72.1, "pluvi": 810.0 },
+            { "temp": 28.0, "humidite": 78.5, "pluvi": 950.0 },
+            { "temp": 35.0, "humidite": 85.0, "pluvi": 1250.0 }
+          ]
+        },
+        {
+          "code": "CapSol01",
+          "type": "SOL",
+          "status": "ACTIF",
+          "seuils": { "phMin": 5.8, "phMax": 6.8, "humMin": 15.0, "humMax": 22.0, "azoteMin": 25.0, "azoteMax": 50.0 },
+          "historique_valeurs": [
+            { "ph": 6.2, "humidite": 18.0, "azote": 35.0 },
+            { "ph": 6.5, "humidite": 20.0, "azote": 40.0 },
+            { "ph": 7.0, "humidite": 23.5, "azote": 55.0 },
+            { "ph": 5.5, "humidite": 12.0, "azote": 20.0 },
+            { "ph": 6.3, "humidite": 19.0, "azote": 38.0 }
+          ]
+        }
+      ],
+      "productions": [
+        { "valeur": 250.0, "typeProd": "RENDEM_CULTURE" }
+      ]
+    },
+    {
+      "code": "ZC002",
+      "type": "CULTURE",
+      "nom": "Serre Tomates",
+      "status": "ACTIF",
+      "culture": {
+        "nom": "Tomate",
+        "datePlantation": "2026-03-01",
+        "dateRecolte": "2026-07-30",
+        "stadeCroissance": "SEMI",
+        "exigPedologiques": {
+          "phMin": 5.5, "phMax": 7.0,
+          "humiditeMin": 60.0, "humiditeMax": 80.0,
+          "azoteMin": 80.0, "azoteMax": 200.0
+        }
+      },
+      "capteurs": [],
+      "productions": []
+    },
+    {
+      "code": "ZE001",
+      "type": "ELEVAGE",
+      "nom": "Etable Vaches",
+      "status": "ACTIF",
+      "typeAnimal": "RUMINANT",
+      "progAlimentaire": {
+        "typeAliment": "Foin + Concentre",
+        "quantiteParRepas": 8.0,
+        "repasParJour": 3
+      },
+      "animaux": [
+        { "especeNom": "Vache laitiere", "typeAnimal": "RUMINANT", "age": 4, "poids": 550.0, "etat": "SAIN" },
+        { "especeNom": "Vache laitiere", "typeAnimal": "RUMINANT", "age": 3, "poids": 520.0, "etat": "SAIN" }
+      ],
+      "capteurs": [
+        {
+          "code": "CapBio01",
+          "type": "BIOM",
+          "status": "ACTIF",
+          "seuils": { "tempMin": 38.0, "tempMax": 41.0, "actMin": 0.0, "actMax": 260.0 },
+          "historique_valeurs": [
+            { "temp_corp": 38.5, "act": 120.0 },
+            { "temp_corp": 39.1, "act": 90.0 },
+            { "temp_corp": 41.5, "act": 20.0 },
+            { "temp_corp": 38.8, "act": 150.0 },
+            { "temp_corp": 37.5, "act": 200.0 }
+          ]
+        }
+      ],
+      "productions": [
+        { "valeur": 120.0, "typeProd": "LAIT" }
+      ]
+    },
+    {
+      "code": "ZE002",
+      "type": "ELEVAGE",
+      "nom": "Poulailler",
+      "status": "ACTIF",
+      "typeAnimal": "VOLAILLE",
+      "progAlimentaire": {
+        "typeAliment": "Grains de ble",
+        "quantiteParRepas": 0.15,
+        "repasParJour": 2
+      },
+      "animaux": [
+        { "especeNom": "Poule pondeuse", "typeAnimal": "VOLAILLE", "age": 1, "poids": 2.5, "etat": "SAIN" },
+        { "especeNom": "Poule pondeuse", "typeAnimal": "VOLAILLE", "age": 1, "poids": 2.3, "etat": "MALADE" }
+      ],
+      "capteurs": [
+        {
+          "code": "CapGPS01",
+          "type": "GPS",
+          "status": "ACTIF",
+          "animalIndex": 0,
+          "seuils": { "lonMin": -5.0, "lonMax": 5.0, "latMin": -5.0, "latMax": 5.0 },
+          "historique_valeurs": [
+            { "longitude": 1.2, "latitude": 2.3 },
+            { "longitude": 3.1, "latitude": 1.5 },
+            { "longitude": 4.8, "latitude": 4.9 },
+            { "longitude": 6.0, "latitude": 3.2 },
+            { "longitude": 2.0, "latitude": -1.0 }
+          ]
+        }
+      ],
+      "productions": [
+        { "valeur": 200.0, "typeProd": "OEUFS" }
+      ]
+    },
+    {
+      "code": "ZA001",
+      "type": "AQUA",
+      "nom": "Bassin Tilapia",
+      "status": "ACTIF",
+      "espece": "sardine",
+      "nbAnimaux": 500,
+      "progAlimentaire": {
+        "typeAliment": "Granules poissons",
+        "quantiteParRepas": 0.5,
+        "repasParJour": 3
+      },
+      "capteurs": [
+        {
+          "code": "CapAqua01",
+          "type": "AQUA",
+          "status": "ACTIF",
+          "seuils": { "tempMin": 20.0, "tempMax": 30.0, "oxyMin": 5.5, "oxyMax": 6.5, "phMin": 6.0, "phMax": 9.0 },
+          "historique_valeurs": [
+            { "temp": 24.0, "oxygene": 6.0, "ph": 7.2 },
+            { "temp": 26.5, "oxygene": 5.8, "ph": 7.5 },
+            { "temp": 31.0, "oxygene": 4.5, "ph": 8.1 },
+            { "temp": 22.0, "oxygene": 6.3, "ph": 7.0 },
+            { "temp": 25.0, "oxygene": 6.1, "ph": 7.3 }
+          ]
+        }
+      ],
+      "productions": [
+        { "valeur": 80.0, "typeProd": "POIDS_RECOLTE" }
+      ]
+    }
+  ]
+}
