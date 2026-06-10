@@ -1,9 +1,9 @@
 package com.example.tpoop;
 
 public class ExigPedologiques {
-     private PlageSeuils ph;
-     private PlageSeuils humidite;
-     private PlageSeuils azote;
+     PlageSeuils ph;
+     PlageSeuils humidite;
+     PlageSeuils azote;
 
      public ExigPedologiques(double phMin, double phMax, double humiditeMin, double humiditeMax,
                              double azoteMin, double azoteMax) {

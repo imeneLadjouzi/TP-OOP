@@ -818,6 +818,9 @@ class MainController {
     // ─────────────────────────────────────────────────────────────────
     // PAGE CAPTEURS
     // ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
+// PAGE CAPTEURS
+// ─────────────────────────────────────────────────────────────────
     private VBox buildCapteursPage() {
         VBox page = pageContainer();
         page.getChildren().add(buildPageHeader("Capteurs", "Tableau de bord et historique des relevés"));
@@ -835,7 +838,7 @@ class MainController {
         tb.getColumns().addAll(
                 styledCol("Code",         90,  c -> c.getCode()),
                 styledCol("Type",         110, c -> c.getType().name()),
-                styledCol("Zone",         150, c -> c.getLocation() != null ? c.getLocation().getName() : "—"),
+                styledCol("Zone",         150, c -> c.getLocation() != null ? c.getLocation().getCode() : "—"),
                 styledCol("Statut",       90,  c -> c.getStatus().name()),
                 styledCol("Dernier relevé", 160, c -> {
                     if (c.getHistorique().isEmpty()) return "Aucun";
@@ -880,6 +883,13 @@ class MainController {
             configurerSeuilsDialog(c);
         });
 
+        Button bAfficherSeuils = btn("Afficher seuils", STYLE_BTN_GHOST);
+        bAfficherSeuils.setOnAction(e -> {
+            Capteurs c = tb.getSelectionModel().getSelectedItem();
+            if (c == null) { info("Sélectionnez un capteur."); return; }
+            afficherSeuilsCapteur(c);
+        });
+
         Button bHist = btn("Historique relevés", STYLE_BTN_GHOST);
         bHist.setOnAction(e -> {
             Capteurs c = tb.getSelectionModel().getSelectedItem();
@@ -887,48 +897,341 @@ class MainController {
             showHistoriqueReleves(c);
         });
 
-        actBar.getChildren().addAll(bAdd, bReleve, bStatut, bSeuils, bHist);
+        actBar.getChildren().addAll(bAdd, bReleve, bStatut, bSeuils, bAfficherSeuils, bHist);
         page.getChildren().add(actBar);
         page.getChildren().add(tableCard);
 
-        // Relevés par zone
-        page.getChildren().add(buildSectionHeader("Relevés par zone", null));
+        // Nouvelle section : Historique des relevés par zone avec graphiques
+        page.getChildren().add(buildSectionHeader("Historique des relevés par zone", null));
 
-        for (Zone z : ferme.getZones()) {
-            if (z.getCapteurs().isEmpty()) continue;
-            VBox zCard = new VBox(8);
-            zCard.setStyle(STYLE_CARD);
+        // ComboBox pour sélectionner la zone (afficher les codes)
+        HBox selectorBox = new HBox(12);
+        selectorBox.setAlignment(Pos.CENTER_LEFT);
+        selectorBox.setPadding(new Insets(0, 0, 12, 0));
 
-            HBox zHeader = new HBox(8);
-            zHeader.setAlignment(Pos.CENTER_LEFT);
-            Label lz = new Label(z.getName());
-            lz.setStyle("-fx-font-weight:bold;-fx-font-size:14px;-fx-text-fill:" + COLOR_TEXT_PRIMARY + ";-fx-font-family:'Segoe UI',system;");
-            Label lzCode = new Label(z.getCode());
-            lzCode.setStyle("-fx-background-color:#f0f2f0;-fx-text-fill:" + COLOR_TEXT_SECONDARY + ";-fx-padding:2 8;-fx-background-radius:4;-fx-font-size:12px;");
-            zHeader.getChildren().addAll(lz, lzCode);
-            zCard.getChildren().add(zHeader);
+        ComboBox<Zone> cbZoneHistorique = new ComboBox<>();
+        cbZoneHistorique.getItems().addAll(ferme.getZones().stream()
+                .filter(z -> !z.getCapteurs().isEmpty())
+                .collect(Collectors.toList()));
 
-            for (Capteurs c : z.getCapteurs()) {
-                if (c.getHistorique().isEmpty()) continue;
-                HBox cRow = new HBox(10);
-                cRow.setAlignment(Pos.CENTER_LEFT);
-                cRow.setPadding(new Insets(6, 0, 0, 0));
-
-                Label lCode = new Label(c.getCode());
-                lCode.setStyle("-fx-font-size:12px;-fx-text-fill:" + COLOR_TEXT_SECONDARY + ";-fx-min-width:80px;");
-                Label lType = new Label(c.getType().name());
-                lType.setStyle("-fx-background-color:" + COLOR_INFO_BG + ";-fx-text-fill:" + COLOR_INFO_TEXT + ";-fx-padding:2 8;-fx-background-radius:4;-fx-font-size:11px;");
-                Label lData = new Label(c.getHistorique().get(c.getHistorique().size()-1).getValeurs().toString());
-                lData.setStyle("-fx-font-size:12px;-fx-text-fill:" + COLOR_TEXT_PRIMARY + ";");
-
-                cRow.getChildren().addAll(lCode, lType, lData);
-                zCard.getChildren().add(cRow);
+        // Personnaliser l'affichage des zones pour montrer le code
+        cbZoneHistorique.setCellFactory(param -> new ListCell<Zone>() {
+            @Override
+            protected void updateItem(Zone zone, boolean empty) {
+                super.updateItem(zone, empty);
+                if (empty || zone == null) {
+                    setText(null);
+                } else {
+                    setText(zone.getCode());
+                }
             }
+        });
+        cbZoneHistorique.setButtonCell(new ListCell<Zone>() {
+            @Override
+            protected void updateItem(Zone zone, boolean empty) {
+                super.updateItem(zone, empty);
+                if (empty || zone == null) {
+                    setText(null);
+                } else {
+                    setText(zone.getCode());
+                }
+            }
+        });
 
-            page.getChildren().add(zCard);
+        if (!cbZoneHistorique.getItems().isEmpty()) {
+            cbZoneHistorique.getSelectionModel().selectFirst();
+        }
+        styleCombo(cbZoneHistorique);
+        cbZoneHistorique.setPromptText("Sélectionner une zone");
+        cbZoneHistorique.setPrefWidth(250);
+
+        // ComboBox pour sélectionner le type de mesure
+        ComboBox<String> cbMesure = new ComboBox<>();
+        cbMesure.getItems().addAll("Toutes les mesures");
+        styleCombo(cbMesure);
+        cbMesure.setPrefWidth(180);
+        cbMesure.setDisable(true);
+
+        // DatePickers pour filtrer
+        DatePicker dpDebut = new DatePicker();
+        dpDebut.setPromptText("Date début");
+        dpDebut.setPrefWidth(150);
+        DatePicker dpFin = new DatePicker();
+        dpFin.setPromptText("Date fin");
+        dpFin.setPrefWidth(150);
+
+        Button bRafraichir = btn("Rafraîchir", STYLE_BTN_PRIMARY);
+
+        selectorBox.getChildren().addAll(
+                fieldGroup("Zone", cbZoneHistorique),
+                fieldGroup("Mesure", cbMesure),
+                fieldGroup("Du", dpDebut),
+                fieldGroup("Au", dpFin),
+                bRafraichir
+        );
+        page.getChildren().add(selectorBox);
+
+        // Tableau des relevés par zone
+        VBox tableRelevesContainer = new VBox(0);
+        tableRelevesContainer.setStyle(STYLE_CARD_FLUSH);
+        TableView<Releve> tvReleves = buildStyledTable();
+        tvReleves.setMaxHeight(250);
+        tvReleves.getColumns().addAll(
+                styledCol("Capteur", 100, r -> r.getCapteur().getCode()),
+                styledCol("Date/Heure", 160, r -> r.getDateHeure().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"))),
+                styledCol("Niveau", 100, r -> r.getNiveauReleve().name()),
+                styledCol("Valeurs", 400, r -> r.getValeurs().toString())
+        );
+        tableRelevesContainer.getChildren().add(tvReleves);
+        page.getChildren().add(tableRelevesContainer);
+
+        // Zone pour afficher les graphiques
+        VBox chartsContainer = new VBox(20);
+        chartsContainer.setStyle(STYLE_CARD);
+        chartsContainer.setPadding(new Insets(16));
+
+        // Mettre à jour les mesures disponibles quand la zone change
+        cbZoneHistorique.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                Set<String> mesures = new LinkedHashSet<>();
+                for (Capteurs capteur : newVal.getCapteurs()) {
+                    if (!capteur.getHistorique().isEmpty()) {
+                        mesures.addAll(capteur.getHistorique().get(capteur.getHistorique().size() - 1).getValeurs().keySet());
+                    }
+                }
+                cbMesure.getItems().clear();
+                cbMesure.getItems().add("Toutes les mesures");
+                cbMesure.getItems().addAll(mesures);
+                cbMesure.setDisable(mesures.isEmpty());
+                if (!mesures.isEmpty()) {
+                    cbMesure.getSelectionModel().selectFirst();
+                }
+                updateZoneData(newVal, cbMesure.getValue(), dpDebut.getValue(), dpFin.getValue(), tvReleves, chartsContainer);
+            }
+        });
+
+        // Rafraîchir les données
+        bRafraichir.setOnAction(e -> {
+            Zone zone = cbZoneHistorique.getValue();
+            if (zone != null) {
+                updateZoneData(zone, cbMesure.getValue(), dpDebut.getValue(), dpFin.getValue(), tvReleves, chartsContainer);
+            }
+        });
+
+        // Initialiser si une zone est sélectionnée
+        if (!cbZoneHistorique.getItems().isEmpty()) {
+            cbZoneHistorique.getSelectionModel().selectFirst();
         }
 
+        page.getChildren().add(chartsContainer);
+
         return page;
+    }
+
+    // Méthode pour mettre à jour les données de la zone (tableau et graphiques)
+    private void updateZoneData(Zone zone, String selectedMesure, LocalDate dateDebut, LocalDate dateFin,
+                                TableView<Releve> tvReleves, VBox chartsContainer) {
+
+        // Mettre à jour le tableau des relevés
+        List<Releve> tousReleves = new ArrayList<>();
+        for (Capteurs capteur : zone.getCapteurs()) {
+            for (Releve r : capteur.getHistorique()) {
+                // Filtrer par date
+                if (dateDebut != null && r.getDateHeure().toLocalDate().isBefore(dateDebut)) continue;
+                if (dateFin != null && r.getDateHeure().toLocalDate().isAfter(dateFin)) continue;
+
+                // Si une mesure spécifique est sélectionnée, ne garder que les relevés qui ont cette mesure
+                if (selectedMesure != null && !"Toutes les mesures".equals(selectedMesure)) {
+                    if (r.getValeurs().containsKey(selectedMesure)) {
+                        tousReleves.add(r);
+                    }
+                } else {
+                    tousReleves.add(r);
+                }
+            }
+        }
+        tousReleves.sort(Comparator.comparing(Releve::getDateHeure).reversed());
+        tvReleves.getItems().setAll(tousReleves);
+
+        // Mettre à jour les graphiques
+        chartsContainer.getChildren().clear();
+
+        if (zone == null || zone.getCapteurs().isEmpty()) {
+            Label lEmpty = new Label("Aucun capteur dans cette zone.");
+            lEmpty.setStyle("-fx-text-fill:" + COLOR_TEXT_MUTED + ";-fx-font-size:13px;");
+            chartsContainer.getChildren().add(lEmpty);
+            return;
+        }
+
+        // Filtrer les capteurs qui ont des relevés correspondant à la mesure sélectionnée
+        List<Capteurs> capteursAvecReleves = zone.getCapteurs().stream()
+                .filter(c -> {
+                    if (c.getHistorique().isEmpty()) return false;
+                    if (selectedMesure != null && !"Toutes les mesures".equals(selectedMesure)) {
+                        // Vérifier si le capteur a au moins un relevé avec cette mesure
+                        return c.getHistorique().stream().anyMatch(r -> r.getValeurs().containsKey(selectedMesure));
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        if (capteursAvecReleves.isEmpty()) {
+            Label lEmpty = new Label("Aucun relevé disponible pour cette zone avec le filtre sélectionné.");
+            lEmpty.setStyle("-fx-text-fill:" + COLOR_TEXT_MUTED + ";-fx-font-size:13px;");
+            chartsContainer.getChildren().add(lEmpty);
+            return;
+        }
+
+        for (Capteurs capteur : capteursAvecReleves) {
+            // Filtrer les relevés par date
+            List<Releve> relevesFiltres = capteur.getHistorique().stream()
+                    .filter(r -> {
+                        if (dateDebut != null && r.getDateHeure().toLocalDate().isBefore(dateDebut)) return false;
+                        if (dateFin != null && r.getDateHeure().toLocalDate().isAfter(dateFin)) return false;
+                        return true;
+                    })
+                    .collect(Collectors.toList());
+
+            if (relevesFiltres.isEmpty()) continue;
+
+            // Si une mesure spécifique est sélectionnée, ne garder que les relevés qui ont cette mesure
+            if (selectedMesure != null && !"Toutes les mesures".equals(selectedMesure)) {
+                relevesFiltres = relevesFiltres.stream()
+                        .filter(r -> r.getValeurs().containsKey(selectedMesure))
+                        .collect(Collectors.toList());
+            }
+
+            if (relevesFiltres.isEmpty()) continue;
+
+            // Trier les relevés par date
+            relevesFiltres.sort(Comparator.comparing(Releve::getDateHeure));
+
+            // Vérifier quelles mesures sont disponibles
+            Set<String> mesuresDisponibles = new LinkedHashSet<>();
+            for (Releve r : relevesFiltres) {
+                mesuresDisponibles.addAll(r.getValeurs().keySet());
+            }
+
+            if (mesuresDisponibles.isEmpty()) continue;
+
+            // Déterminer quelles mesures afficher
+            List<String> mesuresAAfficher;
+            if (selectedMesure != null && !"Toutes les mesures".equals(selectedMesure) && mesuresDisponibles.contains(selectedMesure)) {
+                mesuresAAfficher = List.of(selectedMesure);
+            } else {
+                mesuresAAfficher = new ArrayList<>(mesuresDisponibles);
+            }
+
+            // Créer une carte pour chaque capteur
+            VBox capteurCard = new VBox(10);
+            capteurCard.setStyle(STYLE_CARD);
+            capteurCard.setPadding(new Insets(12));
+
+            // En-tête du capteur
+            HBox header = new HBox(10);
+            header.setAlignment(Pos.CENTER_LEFT);
+            Label lCapteur = new Label(capteur.getCode() + " (" + capteur.getType().name() + ")");
+            lCapteur.setStyle("-fx-font-weight:bold;-fx-font-size:14px;-fx-text-fill:" + COLOR_TEXT_PRIMARY + ";");
+
+            Label lNbReleves = new Label(relevesFiltres.size() + " relevé(s)");
+            lNbReleves.setStyle("-fx-text-fill:" + COLOR_TEXT_MUTED + ";-fx-font-size:11px;");
+
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+
+            // Dernier relevé
+            Releve dernier = relevesFiltres.get(relevesFiltres.size() - 1);
+            Label lDernier = new Label("Dernier: " + dernier.getDateHeure().format(DateTimeFormatter.ofPattern("dd/MM HH:mm")) +
+                    " [" + dernier.getNiveauReleve() + "]");
+            lDernier.setStyle("-fx-text-fill:" + COLOR_INFO_TEXT + ";-fx-font-size:11px;");
+
+            header.getChildren().addAll(lCapteur, lNbReleves, spacer, lDernier);
+            capteurCard.getChildren().add(header);
+
+            // Créer un graphique pour chaque mesure
+            for (String mesure : mesuresAAfficher) {
+                if (!mesuresDisponibles.contains(mesure)) continue;
+
+                // Préparer les données
+                CategoryAxis xAxis = new CategoryAxis();
+                NumberAxis yAxis = new NumberAxis();
+                xAxis.setLabel("Date/Heure");
+                yAxis.setLabel(mesure);
+                xAxis.setTickLabelRotation(45);
+
+                LineChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
+                chart.setTitle(mesure);
+                chart.setPrefHeight(250);
+                chart.setCreateSymbols(true);
+                chart.setStyle("-fx-background-color:white;-fx-border-color:" + COLOR_CARD_BORDER + ";-fx-border-radius:4;-fx-background-radius:4;");
+
+                XYChart.Series<String, Number> series = new XYChart.Series<>();
+                series.setName(mesure);
+
+                for (Releve r : relevesFiltres) {
+                    Object value = r.getValeurs().get(mesure);
+                    if (value instanceof Number) {
+                        String time = r.getDateHeure().format(DateTimeFormatter.ofPattern("dd/MM HH:mm"));
+                        series.getData().add(new XYChart.Data<>(time, ((Number) value).doubleValue()));
+                    }
+                }
+
+                chart.getData().add(series);
+                capteurCard.getChildren().add(chart);
+            }
+
+            chartsContainer.getChildren().add(capteurCard);
+        }
+    }
+
+
+    // Méthode pour ajouter des seuils sur le graphique
+    private void addThresholdsToChart(LineChart<String, Number> chart, Capteurs capteur, String mesure) {
+        double minSeuil = Double.NaN;
+        double maxSeuil = Double.NaN;
+
+        if (capteur instanceof Cap_env ce) {
+            if ("temperature".equals(mesure) || "température".equalsIgnoreCase(mesure)) {
+                minSeuil = ce.seuils.temp.getMin();
+                maxSeuil = ce.seuils.temp.getMax();
+            } else if ("humidite".equals(mesure) || "humidité".equalsIgnoreCase(mesure)) {
+                minSeuil = ce.seuils.humidity.getMin();
+                maxSeuil = ce.seuils.humidity.getMax();
+            } else if ("pluviometrie".equals(mesure) || "pluviométrie".equalsIgnoreCase(mesure)) {
+                minSeuil = ce.seuils.pluvi.getMin();
+                maxSeuil = ce.seuils.pluvi.getMax();
+            }
+        } else if (capteur instanceof Cap_sol cs) {
+            if ("ph".equalsIgnoreCase(mesure)) {
+                minSeuil = cs.seuils.ph.getMin();
+                maxSeuil = cs.seuils.ph.getMax();
+            } else if ("humidite".equals(mesure) || "humidité".equalsIgnoreCase(mesure)) {
+                minSeuil = cs.seuils.humidite.getMin();
+                maxSeuil = cs.seuils.humidite.getMax();
+            } else if ("azote".equalsIgnoreCase(mesure)) {
+                minSeuil = cs.seuils.azote.getMin();
+                maxSeuil = cs.seuils.azote.getMax();
+            }
+        } else if (capteur instanceof Cap_aqua ca) {
+            if ("temperature".equals(mesure) || "température".equalsIgnoreCase(mesure)) {
+                minSeuil = ca.seuils.temp.getMin();
+                maxSeuil = ca.seuils.temp.getMax();
+            } else if ("oxygene".equals(mesure) || "oxygène".equalsIgnoreCase(mesure)) {
+                minSeuil = ca.seuils.oxygen.getMin();
+                maxSeuil = ca.seuils.oxygen.getMax();
+            } else if ("ph".equalsIgnoreCase(mesure)) {
+                minSeuil = ca.seuils.ph.getMin();
+                maxSeuil = ca.seuils.ph.getMax();
+            }
+        } else if (capteur instanceof Cap_biometrique cb) {
+            if ("temperature_corporelle".equals(mesure) || "température corporelle".equalsIgnoreCase(mesure)) {
+                minSeuil = cb.seuils.temp_corporelle.getMin();
+                maxSeuil = cb.seuils.temp_corporelle.getMax();
+            } else if ("activite_par_minute".equals(mesure) || "activité".equalsIgnoreCase(mesure)) {
+                minSeuil = cb.seuils.activity_per_min.getMin();
+                maxSeuil = cb.seuils.activity_per_min.getMax();
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -985,6 +1288,31 @@ class MainController {
         // Alert table
         TableView<Alerte> ta = buildAlerteTable();
 
+        // Fonction pour trier les alertes par niveau de gravité
+        Comparator<Alerte> graviteComparator = (a1, a2) -> {
+            // Définir l'ordre de priorité
+            Map<Niveau_gravite, Integer> order = new HashMap<>();
+            order.put(Niveau_gravite.CRITIQUE, 1);
+            order.put(Niveau_gravite.AVERTISSEMENT, 2);
+            order.put(Niveau_gravite.INFO, 3);
+
+            Integer order1 = order.get(a1.getGravite());
+            Integer order2 = order.get(a2.getGravite());
+
+            // Les alertes acquittées (non actives) viennent après toutes les alertes actives
+            if (a1.isActive() != a2.isActive()) {
+                return a1.isActive() ? -1 : 1;
+            }
+
+            // Pour les alertes actives, comparer par gravité
+            if (a1.isActive() && a2.isActive()) {
+                return order1.compareTo(order2);
+            }
+
+            // Pour les alertes non actives (acquittées), trier par date décroissante
+            return a2.getDateCreation().compareTo(a1.getDateCreation());
+        };
+
         Runnable refresh = () -> {
             Zone zSel = null;
             String zv = cbZone.getValue();
@@ -996,7 +1324,10 @@ class MainController {
             if (!"Tous types".equals(cbType.getValue())) tc = TypeCapteur.valueOf(cbType.getValue());
             Niveau_gravite nv = null;
             if (!"Tous niveaux".equals(cbNiv.getValue())) nv = Niveau_gravite.valueOf(cbNiv.getValue());
-            ta.getItems().setAll(ferme.filtrer(zSel, tc, nv, dpDeb.getValue(), dpFin.getValue()));
+
+            List<Alerte> filtered = ferme.filtrer(zSel, tc, nv, dpDeb.getValue(), dpFin.getValue());
+            filtered.sort(graviteComparator);
+            ta.getItems().setAll(filtered);
         };
 
         Button bSearch = btn("Appliquer les filtres", STYLE_BTN_PRIMARY);
@@ -1046,20 +1377,31 @@ class MainController {
                 styledCol("Type capteur", 110, a -> a.getReleve().getCapteur().getType().name())
         );
 
+        // Colorer les lignes selon le statut et la gravité
         ta.setRowFactory(tv -> new TableRow<>() {
             @Override
             protected void updateItem(Alerte a, boolean empty) {
                 super.updateItem(a, empty);
-                if (a == null || empty) { setStyle(""); return; }
-                setStyle(switch (a.getGravite()) {
-                    case CRITIQUE       -> "-fx-background-color:" + COLOR_DANGER_BG  + ";";
-                    case AVERTISSEMENT  -> "-fx-background-color:" + COLOR_WARNING_BG + ";";
-                    default             -> "";
-                });
+                if (a == null || empty) {
+                    setStyle("");
+                    return;
+                }
+
+                // Si l'alerte est acquittée (non active), couleur verte
+                if (!a.isActive()) {
+                    setStyle("-fx-background-color: " + COLOR_SUCCESS_BG + ";");
+                }
+                // Sinon, colorer selon la gravité
+                else {
+                    setStyle(switch (a.getGravite()) {
+                        case CRITIQUE -> "-fx-background-color: " + COLOR_DANGER_BG + ";";
+                        case AVERTISSEMENT -> "-fx-background-color: " + COLOR_WARNING_BG + ";";
+                        default -> "";
+                    });
+                }
             }
         });
 
-        ta.getItems().addAll(ferme.getAlertes());
         return ta;
     }
 
@@ -1311,52 +1653,188 @@ class MainController {
         d.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
         d.getDialogPane().setStyle("-fx-background-color:#ffffff;-fx-font-family:'Segoe UI',system;");
         GridPane gp = styledGrid();
-        TextField tfCode = dlgInput("");
+
         ComboBox<TypeCapteur> cbType = new ComboBox<>(FXCollections.observableArrayList(TypeCapteur.values()));
         cbType.getSelectionModel().selectFirst();
         styleCombo(cbType);
-        ComboBox<Zone> cbZone = new ComboBox<>(FXCollections.observableArrayList(ferme.getZones()));
-        cbZone.getSelectionModel().selectFirst();
+
+        // Initialisation de la ComboBox des zones (vide au départ)
+        ComboBox<Zone> cbZone = new ComboBox<>();
         styleCombo(cbZone);
-        TextField v1 = dlgInput("20"), v2 = dlgInput("60"), v3 = dlgInput("800");
-        Label lv1 = dlgLbl("Val 1 :"), lv2 = dlgLbl("Val 2 :"), lv3 = dlgLbl("Val 3 :");
-        cbType.setOnAction(e -> {
-            switch (cbType.getValue()) {
-                case ENV         -> { lv1.setText("Température :"); lv2.setText("Humidité :"); lv3.setText("Pluviométrie :"); v3.setVisible(true); }
-                case SOL         -> { lv1.setText("Azote :"); lv2.setText("Humidité :"); lv3.setText("pH :"); v3.setVisible(true); }
-                case AQUA        -> { lv1.setText("Temp. eau :"); lv2.setText("Oxygène :"); lv3.setText("pH :"); v3.setVisible(true); }
-                case BIOMETRIQUE -> { lv1.setText("Temp. corp. :"); lv2.setText("Activité/min :"); lv3.setVisible(false); }
-                case GPS         -> { lv1.setText("Latitude :"); lv2.setText("Longitude :"); lv3.setVisible(false); }
+
+        // ComboBox pour l'animal (visible uniquement pour GPS)
+        ComboBox<Animal> cbAnimal = new ComboBox<>();
+        styleCombo(cbAnimal);
+        cbAnimal.setVisible(false);
+        cbAnimal.setManaged(false);
+
+        // Personnaliser l'affichage des animaux
+        cbAnimal.setCellFactory(param -> new ListCell<Animal>() {
+            @Override
+            protected void updateItem(Animal animal, boolean empty) {
+                super.updateItem(animal, empty);
+                if (empty || animal == null) {
+                    setText(null);
+                } else {
+                    setText("Animal #" + animal.getID() + " - " + animal.getEspece().getName());
+                }
             }
         });
-        gp.addRow(0, dlgLbl("Code :"),  tfCode);
-        gp.addRow(1, dlgLbl("Type :"),  cbType);
-        gp.addRow(2, dlgLbl("Zone :"),  cbZone);
-        gp.addRow(3, lv1, v1);
-        gp.addRow(4, lv2, v2);
-        gp.addRow(5, lv3, v3);
+
+        cbAnimal.setButtonCell(new ListCell<Animal>() {
+            @Override
+            protected void updateItem(Animal animal, boolean empty) {
+                super.updateItem(animal, empty);
+                if (empty || animal == null) {
+                    setText(null);
+                } else {
+                    setText("Animal #" + animal.getID() + " - " + animal.getEspece().getName());
+                }
+            }
+        });
+
+        // Personnaliser l'affichage des zones pour montrer le code
+        cbZone.setCellFactory(param -> new ListCell<Zone>() {
+            @Override
+            protected void updateItem(Zone zone, boolean empty) {
+                super.updateItem(zone, empty);
+                if (empty || zone == null) {
+                    setText(null);
+                } else {
+                    setText(zone.getCode());
+                }
+            }
+        });
+
+        // Personnaliser l'affichage dans le bouton de sélection
+        cbZone.setButtonCell(new ListCell<Zone>() {
+            @Override
+            protected void updateItem(Zone zone, boolean empty) {
+                super.updateItem(zone, empty);
+                if (empty || zone == null) {
+                    setText(null);
+                } else {
+                    setText(zone.getCode());
+                }
+            }
+        });
+
+        // Mise à jour des zones selon le type sélectionné
+        cbType.valueProperty().addListener((obs, oldVal, newVal) -> {
+            List<Zone> zonesFiltrees = new ArrayList<>();
+            boolean showAnimal = false;
+
+            if (newVal != null) {
+                switch (newVal) {
+                    case AQUA:
+                        zonesFiltrees = ferme.getZones().stream()
+                                .filter(z -> z instanceof ZoneAqua)
+                                .collect(Collectors.toList());
+                        showAnimal = false;
+                        break;
+                    case ENV:
+                        zonesFiltrees = ferme.getZones().stream()
+                                .filter(z -> z instanceof ZoneCulture)
+                                .collect(Collectors.toList());
+                        showAnimal = false;
+                        break;
+                    case SOL:
+                        zonesFiltrees = ferme.getZones().stream()
+                                .filter(z -> z instanceof ZoneCulture)
+                                .collect(Collectors.toList());
+                        showAnimal = false;
+                        break;
+                    case BIOMETRIQUE:
+                        zonesFiltrees = ferme.getZones().stream()
+                                .filter(z -> z instanceof ZoneElevage)
+                                .collect(Collectors.toList());
+                        showAnimal = false;
+                        break;
+                    case GPS:
+                        zonesFiltrees = ferme.getZones().stream()
+                                .filter(z -> z instanceof ZoneElevage && !((ZoneElevage)z).getAnimaux().isEmpty())
+                                .collect(Collectors.toList());
+                        showAnimal = true;
+                        break;
+                    default:
+                        zonesFiltrees = new ArrayList<>(ferme.getZones());
+                        showAnimal = false;
+                }
+            }
+
+            cbZone.setItems(FXCollections.observableArrayList(zonesFiltrees));
+            if (!zonesFiltrees.isEmpty()) {
+                cbZone.getSelectionModel().selectFirst();
+            }
+
+            // Afficher/masquer la comboBox animal
+            cbAnimal.setVisible(showAnimal);
+            cbAnimal.setManaged(showAnimal);
+            if (showAnimal) {
+                // Mettre à jour la liste des animaux quand la zone change
+                updateAnimalList(cbZone.getValue(), cbAnimal);
+            }
+        });
+
+        // Mettre à jour les animaux quand la zone change
+        cbZone.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (cbType.getValue() == TypeCapteur.GPS) {
+                updateAnimalList(newVal, cbAnimal);
+            }
+        });
+
+        // Déclencher le premier filtrage
+        cbType.getSelectionModel().selectFirst();
+
+        gp.addRow(0, dlgLbl("Type :"),  cbType);
+        gp.addRow(1, dlgLbl("Zone :"),  cbZone);
+        gp.addRow(2, dlgLbl("Animal :"),  cbAnimal);
         d.getDialogPane().setContent(gp);
+
         d.showAndWait().ifPresent(bt -> {
             if (bt != ButtonType.OK || cbZone.getValue() == null) return;
+
+            // Vérification pour GPS : animal requis
+            if (cbType.getValue() == TypeCapteur.GPS && cbAnimal.getValue() == null) {
+                info("Veuillez sélectionner un animal pour le capteur GPS");
+                return;
+            }
+
             Zone z = cbZone.getValue();
             try {
                 Capteurs c = null;
                 switch (cbType.getValue()) {
-                    case ENV         -> c = new Cap_env(tfCode.getText(), z, Status.ACTIF, dbl(v1), dbl(v2), dbl(v3));
-                    case SOL         -> c = new Cap_sol(tfCode.getText(), z, Status.ACTIF, dbl(v1), dbl(v2), dbl(v3));
-                    case AQUA        -> c = new Cap_aqua(tfCode.getText(), z, Status.ACTIF, dbl(v1), dbl(v2), dbl(v3));
-                    case BIOMETRIQUE -> c = new Cap_biometrique(tfCode.getText(), z, Status.ACTIF, dbl(v1), dbl(v2));
+                    case ENV         -> c = new Cap_env(z, Status.ACTIF);
+                    case SOL         -> c = new Cap_sol(z, Status.ACTIF);
+                    case AQUA        -> c = new Cap_aqua(z, Status.ACTIF);
+                    case BIOMETRIQUE -> c = new Cap_biometrique(z, Status.ACTIF);
                     case GPS         -> {
-                        Animal anGPS = (z instanceof ZoneElevage ze && !ze.getAnimaux().isEmpty())
-                                ? ze.getAnimaux().get(0)
-                                : new Animal(new EspeceAnim(TypeAnimal.RUMINANT, "Animal GPS"), 1, 50, EtatSante.SAIN);
-                        c = new Capteur_GPS(tfCode.getText(), z, Status.ACTIF,
-                                new PositionGeographique(dbl(v1), dbl(v2)), anGPS);
+                        Animal anGPS = cbAnimal.getValue();
+                        c = new Capteur_GPS(z, Status.ACTIF, anGPS);
                     }
                 }
                 if (c != null) g.ajouterCapteur(z, c);
             } catch (Exception ex) { info("Erreur : " + ex.getMessage()); }
         });
+    }
+
+    // Méthode utilitaire pour mettre à jour la liste des animaux
+    private void updateAnimalList(Zone zone, ComboBox<Animal> cbAnimal) {
+        if (zone instanceof ZoneElevage ze) {
+            List<Animal> animaux = ze.getAnimaux();
+            if (animaux != null && !animaux.isEmpty()) {
+                cbAnimal.setItems(FXCollections.observableArrayList(animaux));
+                cbAnimal.getSelectionModel().selectFirst();
+                cbAnimal.setDisable(false);
+            } else {
+                cbAnimal.setItems(FXCollections.observableArrayList());
+                cbAnimal.setDisable(true);
+                cbAnimal.setPromptText("Aucun animal dans cette zone");
+            }
+        } else {
+            cbAnimal.setItems(FXCollections.observableArrayList());
+            cbAnimal.setDisable(true);
+        }
     }
 
     private void configurerSeuilsDialog(Capteurs c) {
@@ -1372,33 +1850,114 @@ class MainController {
             gp.addRow(1,dlgLbl("Humidité min / max :"), new HBox(6,tHMin,new Label("/"),tHMax));
             gp.addRow(2,dlgLbl("Pluvio. min / max :"),  new HBox(6,tPMin,new Label("/"),tPMax));
             d.getDialogPane().setContent(gp);
-            d.showAndWait().ifPresent(bt->{ if(bt==ButtonType.OK) ce.configurer(dbl(tTMin),dbl(tTMax),dbl(tHMin),dbl(tHMax),dbl(tPMin),dbl(tPMax)); });
+            d.showAndWait().ifPresent(bt->{
+                if(bt==ButtonType.OK) {
+                    double tempMin = dbl(tTMin);
+                    double tempMax = dbl(tTMax);
+                    double humMin = dbl(tHMin);
+                    double humMax = dbl(tHMax);
+                    double pluMin = dbl(tPMin);
+                    double pluMax = dbl(tPMax);
+
+                    // Vérification et permutation si min > max
+                    if (tempMin > tempMax) { double temp = tempMin; tempMin = tempMax; tempMax = temp; }
+                    if (humMin > humMax) { double temp = humMin; humMin = humMax; humMax = temp; }
+                    if (pluMin > pluMax) { double temp = pluMin; pluMin = pluMax; pluMax = temp; }
+
+                    ce.configurer(tempMin, tempMax, humMin, humMax, pluMin, pluMax);
+                    info("Seuils configurés avec succès !");
+                }
+            });
         } else if (c instanceof Cap_sol cs) {
             TextField tHMin=dlgInput("15"),tHMax=dlgInput("22"),tPhMin=dlgInput("5.8"),tPhMax=dlgInput("6.8"),tAzMin=dlgInput("25"),tAzMax=dlgInput("50");
             gp.addRow(0,dlgLbl("Humidité min / max :"),new HBox(6,tHMin,new Label("/"),tHMax));
             gp.addRow(1,dlgLbl("pH min / max :"),      new HBox(6,tPhMin,new Label("/"),tPhMax));
             gp.addRow(2,dlgLbl("Azote min / max :"),   new HBox(6,tAzMin,new Label("/"),tAzMax));
             d.getDialogPane().setContent(gp);
-            d.showAndWait().ifPresent(bt->{ if(bt==ButtonType.OK){ cs.configurerHum(dbl(tHMin),dbl(tHMax)); cs.configurerTemp(dbl(tPhMin),dbl(tPhMax)); cs.configurerPh(dbl(tAzMin),dbl(tAzMax)); }});
+            d.showAndWait().ifPresent(bt->{
+                if(bt==ButtonType.OK) {
+                    double humMin = dbl(tHMin);
+                    double humMax = dbl(tHMax);
+                    double phMin = dbl(tPhMin);
+                    double phMax = dbl(tPhMax);
+                    double azMin = dbl(tAzMin);
+                    double azMax = dbl(tAzMax);
+
+                    // Vérification et permutation si min > max
+                    if (humMin > humMax) { double temp = humMin; humMin = humMax; humMax = temp; }
+                    if (phMin > phMax) { double temp = phMin; phMin = phMax; phMax = temp; }
+                    if (azMin > azMax) { double temp = azMin; azMin = azMax; azMax = temp; }
+
+                    cs.configurerHum(humMin, humMax);
+                    cs.configurerTemp(phMin, phMax);
+                    cs.configurerPh(azMin, azMax);
+                    info("Seuils configurés avec succès !");
+                }
+            });
         } else if (c instanceof Cap_aqua ca) {
             TextField tTMin=dlgInput("20"),tTMax=dlgInput("30"),tOMin=dlgInput("5.5"),tOMax=dlgInput("6.5"),tPhMin=dlgInput("6"),tPhMax=dlgInput("9");
             gp.addRow(0,dlgLbl("Temp. min / max :"),  new HBox(6,tTMin,new Label("/"),tTMax));
             gp.addRow(1,dlgLbl("Oxygène min / max :"),new HBox(6,tOMin,new Label("/"),tOMax));
             gp.addRow(2,dlgLbl("pH min / max :"),     new HBox(6,tPhMin,new Label("/"),tPhMax));
             d.getDialogPane().setContent(gp);
-            d.showAndWait().ifPresent(bt->{ if(bt==ButtonType.OK) ca.configurer(dbl(tTMin),dbl(tTMax),dbl(tOMin),dbl(tOMax),dbl(tPhMin),dbl(tPhMax)); });
+            d.showAndWait().ifPresent(bt->{
+                if(bt==ButtonType.OK) {
+                    double tempMin = dbl(tTMin);
+                    double tempMax = dbl(tTMax);
+                    double oxyMin = dbl(tOMin);
+                    double oxyMax = dbl(tOMax);
+                    double phMin = dbl(tPhMin);
+                    double phMax = dbl(tPhMax);
+
+                    // Vérification et permutation si min > max
+                    if (tempMin > tempMax) { double temp = tempMin; tempMin = tempMax; tempMax = temp; }
+                    if (oxyMin > oxyMax) { double temp = oxyMin; oxyMin = oxyMax; oxyMax = temp; }
+                    if (phMin > phMax) { double temp = phMin; phMin = phMax; phMax = temp; }
+
+                    ca.configurer(tempMin, tempMax, oxyMin, oxyMax, phMin, phMax);
+                    info("Seuils configurés avec succès !");
+                }
+            });
         } else if (c instanceof Cap_biometrique cb) {
             TextField tTMin=dlgInput("38"),tTMax=dlgInput("41"),tAMin=dlgInput("0"),tAMax=dlgInput("260");
             gp.addRow(0,dlgLbl("Temp. min / max :"),    new HBox(6,tTMin,new Label("/"),tTMax));
             gp.addRow(1,dlgLbl("Activité min / max :"), new HBox(6,tAMin,new Label("/"),tAMax));
             d.getDialogPane().setContent(gp);
-            d.showAndWait().ifPresent(bt->{ if(bt==ButtonType.OK) cb.configurer(dbl(tTMin),dbl(tTMax),dbl(tAMin),dbl(tAMax)); });
+            d.showAndWait().ifPresent(bt->{
+                if(bt==ButtonType.OK) {
+                    double tempMin = dbl(tTMin);
+                    double tempMax = dbl(tTMax);
+                    double actMin = dbl(tAMin);
+                    double actMax = dbl(tAMax);
+
+                    // Vérification et permutation si min > max
+                    if (tempMin > tempMax) { double temp = tempMin; tempMin = tempMax; tempMax = temp; }
+                    if (actMin > actMax) { double temp = actMin; actMin = actMax; actMax = temp; }
+
+                    cb.configurer(tempMin, tempMax, actMin, actMax);
+                    info("Seuils configurés avec succès !");
+                }
+            });
         } else if (c instanceof Capteur_GPS cg) {
             TextField tLonMin=dlgInput("-5"),tLonMax=dlgInput("5"),tLatMin=dlgInput("-5"),tLatMax=dlgInput("5");
             gp.addRow(0,dlgLbl("Longitude min / max :"), new HBox(6,tLonMin,new Label("/"),tLonMax));
             gp.addRow(1,dlgLbl("Latitude min / max :"),  new HBox(6,tLatMin,new Label("/"),tLatMax));
             d.getDialogPane().setContent(gp);
-            d.showAndWait().ifPresent(bt->{ if(bt==ButtonType.OK) cg.configurer(dbl(tLonMin),dbl(tLonMax),dbl(tLatMin),dbl(tLatMax)); });
+            d.showAndWait().ifPresent(bt->{
+                if(bt==ButtonType.OK) {
+                    double lonMin = dbl(tLonMin);
+                    double lonMax = dbl(tLonMax);
+                    double latMin = dbl(tLatMin);
+                    double latMax = dbl(tLatMax);
+
+                    // Vérification et permutation si min > max
+                    if (lonMin > lonMax) { double temp = lonMin; lonMin = lonMax; lonMax = temp; }
+                    if (latMin > latMax) { double temp = latMin; latMin = latMax; latMax = temp; }
+
+                    cg.configurer(lonMin, lonMax, latMin, latMax);
+                    info("Seuils configurés avec succès !");
+                }
+            });
         } else {
             info("Ce type de capteur n'est pas configurable.");
         }
@@ -1491,6 +2050,39 @@ class MainController {
         sp.setStyle("-fx-background-color:" + COLOR_PAGE_BG + ";-fx-border-color:transparent;-fx-background:" + COLOR_PAGE_BG + ";");
         s.setScene(new Scene(sp, 800, 680));
         s.show();
+    }
+
+    private void afficherSeuilsCapteur(Capteurs c) {
+        String seuilsText = "";
+
+        if (c instanceof Cap_env) {
+            seuilsText = ((Cap_env) c).display_seuils();
+        } else if (c instanceof Cap_sol) {
+            seuilsText = ((Cap_sol) c).display_seuils();
+        } else if (c instanceof Cap_aqua) {
+            seuilsText = ((Cap_aqua) c).display_seuils();
+        } else if (c instanceof Cap_biometrique) {
+            seuilsText = ((Cap_biometrique) c).display_seuils();
+        } else if (c instanceof Capteur_GPS) {
+            seuilsText = ((Capteur_GPS) c).display_seuils();
+        } else {
+            seuilsText = "Aucune configuration de seuils disponible pour ce type de capteur.";
+        }
+
+        Alert al = new Alert(Alert.AlertType.INFORMATION);
+        styleDialog(al);
+        al.setTitle("Seuils du capteur — " + c.getCode());
+        al.setHeaderText(c.getType().name() + " — " + c.getCode());
+
+        TextArea ta = new TextArea(seuilsText);
+        ta.setEditable(false);
+        ta.setWrapText(true);
+        ta.setPrefHeight(400);
+        ta.setPrefWidth(550);
+        ta.setStyle(STYLE_INPUT + "-fx-font-family:'Courier New',monospace;-fx-font-size:12px;");
+
+        al.getDialogPane().setContent(ta);
+        al.showAndWait();
     }
 
     // ─────────────────────────────────────────────────────────────────

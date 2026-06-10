@@ -8,12 +8,13 @@ public class Cap_aqua extends Capteur_num {
     private double temp;
     private double oxygen;
     private double ph;
-    private seuils seuils= new seuils(20,30,5.5,6.5,6,143);
+    private static int nbSeq=1;
+    seuils seuils= new seuils(20,30,5.5,6.5,6,143);
 
     class seuils{
-        private PlageSeuils temp;
-        private PlageSeuils oxygen;
-        private PlageSeuils ph;
+        PlageSeuils temp;
+        PlageSeuils oxygen;
+        PlageSeuils ph;
 
         seuils(double tempMin, double tempMax, double oxygenMin, double oxygenMax, double phMin, double phMax){
             temp=new PlageSeuils(tempMin,tempMax);
@@ -22,17 +23,41 @@ public class Cap_aqua extends Capteur_num {
         }
     }
 
+    public String display_seuils() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("═══════════════════════════════════════════════════════════\n");
+        sb.append(String.format("SEUILS DU CAPTEUR AQUA - %s\n", this.getCode()));
+        sb.append("═══════════════════════════════════════════════════════════\n\n");
+
+        sb.append("TEMPÉRATURE DE L'EAU\n");
+        sb.append(String.format("   • Seuil bas      : %.1f °C\n", seuils.temp.getMin()));
+        sb.append(String.format("   • Seuil haut     : %.1f °C\n", seuils.temp.getMax()));
+        sb.append("\n");
+
+        sb.append("OXYGÈNE DISSOUS\n");
+        sb.append(String.format("   • Seuil bas      : %.1f mg/L\n", seuils.oxygen.getMin()));
+        sb.append(String.format("   • Seuil haut     : %.1f mg/L\n", seuils.oxygen.getMax()));
+        sb.append("\n");
+
+        sb.append("PH DE L'EAU\n");
+        sb.append(String.format("   • Seuil bas      : %.1f\n", seuils.ph.getMin()));
+        sb.append(String.format("   • Seuil haut     : %.1f\n", seuils.ph.getMax()));
+        sb.append("\n");
+
+        return sb.toString();
+    }
+
     Niveau_gravite evaluertemp(){ return seuils.temp.evaluer(temp);}
     Niveau_gravite evalueroxy(){ return seuils.oxygen.evaluer(oxygen);}
     Niveau_gravite evaluerph(){ return seuils.ph.evaluer(ph);}
 
 
-    public Cap_aqua(String code, Zone location, Status status, double temp, double oxygen, double ph) {
-        super(code, location, status,TypeCapteur.AQUA);
-        this.temp = temp;
-        this.oxygen = oxygen;
-        this.ph = ph;
+    public Cap_aqua(Zone location, Status status) {
+
+        super("CapAqua0" + nbSeq, location, status,TypeCapteur.AQUA);
+        nbSeq++;
     }
+
 
     void configurer(double tempMin, double tempMax, double oxygenMin, double oxygenMax, double phMin, double phMax){
         seuils.temp=new PlageSeuils(tempMin,tempMax);
