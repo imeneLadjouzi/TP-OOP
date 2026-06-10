@@ -49,14 +49,14 @@ public class Seeds {
 
         Cap_aqua      captAqua = new Cap_aqua("CA01", za1, Status.ACTIF, 26.0, 7.5, 7.2);
 
-        Capteur_GPS   captGPS  = new Capteur_GPS("GPS01", zc1, Status.ACTIF,
+        Capteur_GPS   captGPS  = new Capteur_GPS("GPS01", ze2, Status.ACTIF,
                 new PositionGeographique(36.7, 3.1),new Animal(new EspeceAnim(TypeAnimal.VOLAILLE,"vache"),5,50,EtatSante.SAIN));
 
         // Affectation capteurs → zones
         zc1.ajouterCapteur(captEnv);
         zc1.ajouterCapteur(captSol);
-        zc1.ajouterCapteur(captGPS);
         ze1.ajouterCapteur(captBio);
+        ze2.ajouterCapteur(captGPS);
         za1.ajouterCapteur(captAqua);
 
         // ── ENREGISTREMENT DANS LA FERME ──────────────────────────────────

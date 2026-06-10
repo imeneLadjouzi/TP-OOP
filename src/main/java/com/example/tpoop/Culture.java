@@ -38,7 +38,8 @@ public class Culture {
             displayStadeCroiss();
             if (exigPed != null)
                 System.out.println("  Exigences : " + exigPed);
-
-
+    }
+    public void setExigPed(ExigPedologiques ep){
+        this.exigPed=ep;
     }
 }
