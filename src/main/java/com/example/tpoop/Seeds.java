@@ -55,8 +55,8 @@ public class Seeds {
         // Affectation capteurs → zones
         zc1.ajouterCapteur(captEnv);
         zc1.ajouterCapteur(captSol);
-        zc1.ajouterCapteur(captGPS);
         ze1.ajouterCapteur(captBio);
+        ze2.ajouterCapteur(captGPS);
         za1.ajouterCapteur(captAqua);
 
         // ── ENREGISTREMENT DANS LA FERME ──────────────────────────────────
