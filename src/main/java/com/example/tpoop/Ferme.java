@@ -20,7 +20,6 @@ public class Ferme {
 
     // ==================== GESTION DES ZONES ====================
 
-
     public void ajouterZone(Zone z) {
         zones.add(z);
         System.out.println("Zone '" + z.getName() + "' ajoutee.");
@@ -69,6 +68,9 @@ public class Ferme {
         alertes.add(alerte);
     }
 
+    public void supprimerAlerte(Alerte alerte) {
+        alertes.remove(alerte);
+    }
     /**
      * Effectue un relevé sur un capteur et génère une alerte si hors seuils.
      */

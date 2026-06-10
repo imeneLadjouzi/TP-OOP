@@ -7,12 +7,13 @@ public class Cap_env extends Capteur_num {
     private double temp;
     private double humidity;
     private double pluvi;
-    private Seuils seuils=new Seuils(8,32,40,80,500,1200);
+    private static int nbSeq=0;
+    Seuils seuils=new Seuils(8,32,40,80,500,1200);
 
     class Seuils{
-        private PlageSeuils temp;
-        private PlageSeuils humidity;
-        private PlageSeuils pluvi;
+        PlageSeuils temp;
+        PlageSeuils humidity;
+        PlageSeuils pluvi;
 
         Seuils(double tempMin, double tempMax, double humidityMin, double humidityMax, double pluviMin, double pluviMax){
             temp=new PlageSeuils(tempMin,tempMax);
@@ -24,6 +25,30 @@ public class Cap_env extends Capteur_num {
     Niveau_gravite evaluertemp(){ return seuils.temp.evaluer(temp);}
     Niveau_gravite evaluerhum(){ return seuils.humidity.evaluer(humidity);}
     Niveau_gravite evaluerplu(){ return seuils.pluvi.evaluer(pluvi);}
+
+    public String display_seuils() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("===========================================================\n");
+        sb.append(String.format("SEUILS DU CAPTEUR ENVIRONNEMENTAL - %s\n", this.getCode()));
+        sb.append("===========================================================\n\n");
+
+        sb.append("TEMPERATURE\n");
+        sb.append(String.format("   * Seuil bas      : %.1f C\n", seuils.temp.getMin()));
+        sb.append(String.format("   * Seuil haut     : %.1f C\n", seuils.temp.getMax()));
+        sb.append("\n");
+
+        sb.append("HUMIDITE\n");
+        sb.append(String.format("   * Seuil bas      : %.1f %%\n", seuils.humidity.getMin()));
+        sb.append(String.format("   * Seuil haut     : %.1f %%\n", seuils.humidity.getMax()));
+        sb.append("\n");
+
+        sb.append("PLUVIOMETRIE\n");
+        sb.append(String.format("   * Seuil bas      : %.1f mm\n", seuils.pluvi.getMin()));
+        sb.append(String.format("   * Seuil haut     : %.1f mm\n", seuils.pluvi.getMax()));
+        sb.append("\n");
+
+        return sb.toString();
+    }
 
     void configurer(double tempMin, double tempMax, double humidityMin, double humidityMax, double pluviMin, double pluviMax){
         seuils.temp=new PlageSeuils(tempMin,tempMax);
@@ -50,11 +75,9 @@ public class Cap_env extends Capteur_num {
         else return Niveau_gravite.INFO;
     }
 
-    public Cap_env(String code, Zone location, Status status, double temp, double humidity, double pluvi) {
-        super(code, location, status,TypeCapteur.ENV);
-        this.temp = temp;
-        this.humidity = humidity;
-        this.pluvi = pluvi;
+    public Cap_env(Zone location, Status status) {
+        super("CapEnv0"+nbSeq, location, status,TypeCapteur.ENV);
+        nbSeq++;
     }
 
     public void setTemp(double temp) { this.temp = temp; }

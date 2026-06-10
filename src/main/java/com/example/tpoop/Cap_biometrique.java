@@ -6,11 +6,12 @@ import java.util.Map;
 public class Cap_biometrique extends Capteur_num {
     private double temp_corporelle;
     private double activity_per_min;
-    private Seuils seuils=new Seuils(38,41,0,260);
+    private static int nbSeq=1;
+    Seuils seuils=new Seuils(38,41,0,260);
 
     class Seuils{
-        private PlageSeuils temp_corporelle;
-        private PlageSeuils activity_per_min;
+        PlageSeuils temp_corporelle;
+        PlageSeuils activity_per_min;
 
         Seuils(double tempMin, double tempMax, double activityMin, double activityMax){
             temp_corporelle=new PlageSeuils(tempMin,tempMax);
@@ -44,10 +45,30 @@ public class Cap_biometrique extends Capteur_num {
         else return Niveau_gravite.INFO;
     }
 
-    public Cap_biometrique(String code, Zone location, Status status, double temp_corporelle, double activity_per_min) {
-        super(code, location, status,TypeCapteur.BIOMETRIQUE);
-        this.temp_corporelle = temp_corporelle;
-        this.activity_per_min = activity_per_min;
+    public Cap_biometrique(Zone location, Status status) {
+        super("CapBio0"+nbSeq, location, status,TypeCapteur.BIOMETRIQUE);
+        nbSeq++;
+    }
+
+    public String display_seuils() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("═══════════════════════════════════════════════════════════\n");
+        sb.append(String.format("SEUILS DU CAPTEUR BIOMÉTRIQUE - %s\n", this.getCode()));
+        sb.append("═══════════════════════════════════════════════════════════\n\n");
+
+        sb.append("🌡TEMPÉRATURE CORPORELLE\n");
+        sb.append(String.format("   • Seuil bas      : %.1f °C\n", seuils.temp_corporelle.getMin()));
+        sb.append(String.format("   • Seuil haut     : %.1f °C\n", seuils.temp_corporelle.getMax()));
+
+        sb.append("\n");
+
+        sb.append("ACTIVITÉ PAR MINUTE\n");
+        sb.append(String.format("   • Seuil bas      : %.1f pas/min\n", seuils.activity_per_min.getMin()));
+        sb.append(String.format("   • Seuil haut     : %.1f pas/min\n", seuils.activity_per_min.getMax()));
+        sb.append("\n");
+
+
+        return sb.toString();
     }
 
     public void setTempCorporelle(double temp) { this.temp_corporelle = temp; }

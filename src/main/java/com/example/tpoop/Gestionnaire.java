@@ -139,7 +139,6 @@ public class Gestionnaire {
     }
     public void supprimerZone(String code) {
         ferme.getZones().removeIf(z -> z.getCode().equals(code));
-        System.out.println("Zone '" + code + "' supprimee.");
     }
 
 
@@ -191,8 +190,7 @@ public class Gestionnaire {
     }
 
     public void supprimerAlerte(Alerte alerte) {
-        alerte.supprimer();
-
+        ferme.supprimerAlerte(alerte);
     }
 
     public String historiqueAlertes(

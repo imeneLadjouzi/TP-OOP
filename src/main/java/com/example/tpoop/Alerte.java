@@ -29,9 +29,6 @@ public class Alerte {
         this.statut = StatutAlerte.ACQUITTEE;
     }
 
-    public void supprimer() {
-        this.statut = StatutAlerte.SUPPRIMEE;
-    }
 
     public boolean isActive() {
         return statut == StatutAlerte.ACTIVE;

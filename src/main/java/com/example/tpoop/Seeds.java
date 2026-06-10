@@ -41,16 +41,16 @@ public class Seeds {
         za1.setNbAnimaux(500);
 
         // ── CAPTEURS ───────────────────────────────────────────────────────
-        Cap_env       captEnv  = new Cap_env("CE01",  zc1, Status.ACTIF, 22.0, 65.0, 12.0);
+        Cap_env       captEnv  = new Cap_env(  zc1, Status.ACTIF);
 
-        Cap_sol       captSol  = new Cap_sol("CS01",  zc1, Status.ACTIF, 80.0, 55.0, 6.8);
+        Cap_sol       captSol  = new Cap_sol( zc1, Status.ACTIF);
 
-        Cap_biometrique captBio = new Cap_biometrique("CB01", ze1, Status.ACTIF, 38.5, 45.0);
+        Cap_biometrique captBio = new Cap_biometrique( ze1, Status.ACTIF);
 
-        Cap_aqua      captAqua = new Cap_aqua("CA01", za1, Status.ACTIF, 26.0, 7.5, 7.2);
+        Cap_aqua      captAqua = new Cap_aqua(za1, Status.ACTIF);
 
-        Capteur_GPS   captGPS  = new Capteur_GPS("GPS01", ze2, Status.ACTIF,
-                new PositionGeographique(36.7, 3.1),new Animal(new EspeceAnim(TypeAnimal.VOLAILLE,"vache"),5,50,EtatSante.SAIN));
+        Capteur_GPS   captGPS  = new Capteur_GPS( zc1, Status.ACTIF
+                ,new Animal(new EspeceAnim(TypeAnimal.VOLAILLE,"vache"),5,50,EtatSante.SAIN));
 
         // Affectation capteurs → zones
         zc1.ajouterCapteur(captEnv);

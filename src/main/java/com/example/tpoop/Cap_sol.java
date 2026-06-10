@@ -3,13 +3,13 @@ package com.example.tpoop;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.example.tpoop.Main.lireDouble;
 
 public class Cap_sol extends Capteur_num{
     private double azote;
     private double humidity;
     private double ph;
-    private ExigPedologiques seuils=new ExigPedologiques(5.8, 6.8,15,22,25,50);
+    private static int nbSeq=1;
+    ExigPedologiques seuils=new ExigPedologiques(5.8, 6.8,15,22,25,50);
 
 
 
@@ -28,11 +28,33 @@ public class Cap_sol extends Capteur_num{
         return seuils.evaluer(ph,humidity,azote);
     }
 
-    public Cap_sol(String code, Zone location, Status status, double azote, double humidity, double ph) {
-        super(code, location, status,TypeCapteur.SOL);
-        this.azote = azote;
-        this.humidity = humidity;
-        this.ph = ph;
+    public Cap_sol( Zone location, Status status) {
+        super("CapSol0"+nbSeq, location, status,TypeCapteur.SOL);
+        nbSeq++;
+    }
+
+    public String display_seuils() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("===========================================================\n");
+        sb.append(String.format("SEUILS DU CAPTEUR SOL - %s\n", this.getCode()));
+        sb.append("===========================================================\n\n");
+
+        sb.append("PH DU SOL\n");
+        sb.append(String.format("   * Seuil bas      : %.1f\n", seuils.ph.getMin()));
+        sb.append(String.format("   * Seuil haut     : %.1f\n", seuils.ph.getMin()));
+        sb.append("\n");
+
+        sb.append("HUMIDITE DU SOL\n");
+        sb.append(String.format("   * Seuil bas      : %.1f %%\n", seuils.humidite.getMin()));
+        sb.append(String.format("   * Seuil haut     : %.1f %%\n", seuils.humidite.getMax()));
+        sb.append("\n");
+
+        sb.append("AZOTE\n");
+        sb.append(String.format("   * Seuil bas      : %.1f mg/kg\n", seuils.azote.getMin()));
+        sb.append(String.format("   * Seuil haut     : %.1f mg/kg\n", seuils.azote.getMax()));
+        sb.append("\n");
+
+        return sb.toString();
     }
 
     public void setAzote(double azote) { this.azote = azote; }

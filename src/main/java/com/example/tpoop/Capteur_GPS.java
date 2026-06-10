@@ -3,19 +3,35 @@ package com.example.tpoop;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.example.tpoop.Main.lireDouble;
 
 public class Capteur_GPS extends Capteurs{
     private Animal animal;
     private PositionGeographique position;
+    private static int nbSeq=1;
     private PlageSeuils longitude= new PlageSeuils(0,0);
     private PlageSeuils latitude=new PlageSeuils(0,0);
 
-    public Capteur_GPS(String code, Zone location, Status status, PositionGeographique position, Animal animal) {
-        super(code, location, status, TypeCapteur.GPS);
+    public Capteur_GPS( Zone location, Status status, Animal animal) {
+        super("CapGPS0"+nbSeq, location, status, TypeCapteur.GPS);
         this.animal = animal;
-        this.position = position;
+        nbSeq++;
 
+    }
+
+    public String display_seuils() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("===========================================================\n");
+        sb.append(String.format("SEUILS DU CAPTEUR GPS - %s\n", this.getCode()));
+        sb.append("===========================================================\n\n");
+
+        sb.append("ZONE GEOGRAPHIQUE AUTORISEE\n");
+        sb.append(String.format("   * Longitude min  : %.4f deg\n", longitude.getMin()));
+        sb.append(String.format("   * Longitude max  : %.4f deg\n", longitude.getMax()));
+        sb.append(String.format("   * Latitude min   : %.4f deg\n", latitude.getMin()));
+        sb.append(String.format("   * Latitude max   : %.4f deg\n", latitude.getMax()));
+        sb.append("\n");
+
+        return sb.toString();
     }
 
     public void configurer(double minlong, double maxlong, double minlat, double maxlat){
