@@ -27,10 +27,7 @@
           "type": "ENV",
           "seuils": { "tempMin":8.0, "tempMax":32.0, "humMin":40.0, "humMax":80.0, "pluviMin":500.0, "pluviMax":1200.0 },
           "historique_releves": [
-            { "niveau": "INFO", "valeurs": { "pluviometrie": 650.0, "humidite": 55.0, "temperature": 15.0 } },
-            { "niveau": "AVERTISSEMENT", "valeurs": { "pluviometrie": 950.0, "humidite": 78.5, "temperature": 28.0 } },
-            { "niveau": "AVERTISSEMENT", "valeurs": { "pluviometrie": 950.0, "humidite": 78.5, "temperature": 28.0 } },
-            { "niveau": "CRITIQUE", "valeurs": { "pluviometrie": 1250.0, "humidite": 85.0, "temperature": 35.0 } }
+            { "niveau": "CRITIQUE", "valeurs": { "pluviometrie": 0.0, "humidite": 0.0, "temperature": 0.0 } }
           ]
         },
         {
@@ -38,11 +35,7 @@
           "status": "ACTIF",
           "type": "SOL",
           "seuils": { "phMin":5.8, "phMax":6.8, "humMin":15.0, "humMax":22.0, "azoteMin":25.0, "azoteMax":50.0 },
-          "historique_releves": [
-            { "niveau": "INFO", "valeurs": { "humidite": 18.0, "azote": 35.0, "ph": 6.2 } },
-            { "niveau": "CRITIQUE", "valeurs": { "humidite": 12.0, "azote": 20.0, "ph": 5.5 } },
-            { "niveau": "CRITIQUE", "valeurs": { "humidite": 12.0, "azote": 20.0, "ph": 5.5 } }
-          ]
+          "historique_releves": []
         }
       ]
     },
@@ -90,13 +83,6 @@
           "age": 3,
           "poids": 520.0,
           "etat": "SAIN"
-        },
-        {
-          "especeNom": "AA",
-          "typeAnimal": "RUMINANT",
-          "age": 1,
-          "poids": 50.0,
-          "etat": "SAIN"
         }
       ],
       "productions": [
@@ -109,10 +95,7 @@
           "type": "BIOM",
           "seuils": { "tempMin":38.0, "tempMax":41.0, "actMin":0.0, "actMax":260.0 },
           "historique_releves": [
-            { "niveau": "INFO", "valeurs": { "activite_par_minute": 90.0, "temperature_corporelle": 39.1 } },
-            { "niveau": "CRITIQUE", "valeurs": { "activite_par_minute": 200.0, "temperature_corporelle": 37.5 } },
-            { "niveau": "CRITIQUE", "valeurs": { "activite_par_minute": 200.0, "temperature_corporelle": 37.5 } },
-            { "niveau": "INFO", "valeurs": { "activite_par_minute": 120.0, "temperature_corporelle": 38.5 } }
+            { "niveau": "CRITIQUE", "valeurs": { "activite_par_minute": 0.0, "temperature_corporelle": 0.0 } }
           ]
         }
       ]
@@ -153,11 +136,7 @@
           "status": "ACTIF",
           "type": "GPS",
           "seuils": { "lonMin":-5.0, "lonMax":5.0, "latMin":-5.0, "latMax":5.0 },
-          "historique_releves": [
-            { "niveau": "AVERTISSEMENT", "valeurs": { "latitude": 3.1, "longitude": 1.5 } },
-            { "niveau": "INFO", "valeurs": { "latitude": 2.0, "longitude": -1.0 } },
-            { "niveau": "AVERTISSEMENT", "valeurs": { "latitude": 3.1, "longitude": 1.5 } }
-          ]
+          "historique_releves": []
         }
       ]
     },
@@ -183,37 +162,8 @@
           "type": "AQUA",
           "seuils": { "tempMin":20.0, "tempMax":30.0, "oxyMin":5.5, "oxyMax":6.5, "phMin":6.0, "phMax":9.0 },
           "historique_releves": [
-            { "niveau": "INFO", "valeurs": { "oxygene": 5.8, "temperature": 26.5, "ph": 7.5 } },
-            { "niveau": "INFO", "valeurs": { "oxygene": 6.1, "temperature": 25.0, "ph": 7.3 } },
-            { "niveau": "CRITIQUE", "valeurs": { "oxygene": 4.5, "temperature": 31.0, "ph": 8.1 } }
+            { "niveau": "CRITIQUE", "valeurs": { "oxygene": 0.0, "temperature": 0.0, "ph": 0.0 } }
           ]
-        }
-      ]
-    },
-    {
-      "code": "ZE003",
-      "nom": "OO",
-      "status": "ACTIF",
-      "type": "ELEVAGE",
-      "typeAnimal": "RUMINANT",
-      "progAlimentaire": {},
-      "animaux": [
-        {
-          "especeNom": "Vache bovine",
-          "typeAnimal": "RUMINANT",
-          "age": 1,
-          "poids": 50.0,
-          "etat": "SAIN"
-        }
-      ],
-      "productions": [],
-      "capteurs": [
-        {
-          "code": "CapGPS02",
-          "status": "ACTIF",
-          "type": "GPS",
-          "seuils": { "lonMin":0.0, "lonMax":0.0, "latMin":0.0, "latMax":0.0 },
-          "historique_releves": []
         }
       ]
     }

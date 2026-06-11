@@ -13,6 +13,13 @@ module com.example.tpoop {
 
     requires org.kordamp.ikonli.core;
 
+    requires langchain4j;
+    requires langchain4j.core;
+
+    requires org.slf4j;
+
+    requires langchain4j.ollama;
+
     opens com.example.tpoop to javafx.fxml;
     exports com.example.tpoop;
 }

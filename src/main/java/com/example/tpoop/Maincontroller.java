@@ -163,6 +163,11 @@ class MainController {
     private static final Path SEED_PATH = Paths.get("farm_data.json");
     private static final Path SAVE_PATH = Paths.get("farm_save.json");
 
+    // ── AI assistant ──────────────────────────────────────────────────
+    private FarmAiService aiService;
+    private AiChatDialog aiChatDialog;
+    private NotificationService notifService;
+
     // ── Periodic sensor timer ─────────────────────────────────────────
     private Timeline sensorTimer;
     // Map: type capteur ("ENV","SOL","AQUA","BIOM","GPS") -> pool de valeurs seed
@@ -170,7 +175,7 @@ class MainController {
     // Index circulaire par type de capteur
     private final Map<String, Integer> seedIndexByType = new LinkedHashMap<>();
     // Interval in seconds between attribute updates
-    private static final int SENSOR_INTERVAL_SECONDS = 10;
+    private static final int SENSOR_INTERVAL_SECONDS = 20;
 
     public MainController(Stage stage) {
         this.stage = stage;
@@ -214,7 +219,12 @@ class MainController {
             System.err.println("Erreur chargement ferme: " + e.getMessage());
         }
         g = new Gestionnaire(ferme);
-
+        aiService    = new FarmAiService(ferme);
+        notifService = new NotificationService(ferme);
+        g.setNotificationService(notifService);
+        // Register the UI listener — updates badge + panel on every new notification
+        notifService.addListener(n -> javafx.application.Platform.runLater(
+                () -> onNewNotification(n)));
         // 3. Charger les valeurs seed pour les capteurs périodiques
         try {
             seedValuesByType = FarmPersistence.loadSeedSensorValues(SEED_PATH);
@@ -234,6 +244,7 @@ class MainController {
         // 5. Sauvegarder à la fermeture
         stage.setOnCloseRequest(ev -> {
             stopSensorTimer();
+            if (aiChatDialog != null) aiChatDialog.shutdown();
             saveToFile();
         });
 
@@ -301,6 +312,7 @@ class MainController {
             applySeedValues(c, v);
         }
         Platform.runLater(() -> showPage(activePage));
+        notifService.runPeriodicChecks();
     }
 
     /**
@@ -368,6 +380,7 @@ class MainController {
                         "-fx-max-width:200px;"
         );
 
+        // ── Brand header ─────────────────────────────────────────────────
         VBox brand = new VBox(2);
         brand.setPadding(new Insets(24, 20, 20, 20));
         brand.setStyle("-fx-border-color:transparent transparent rgba(255,255,255,0.08) transparent;-fx-border-width:0 0 1 0;");
@@ -382,6 +395,7 @@ class MainController {
         topSpacer.setPrefHeight(8);
         sb.getChildren().add(topSpacer);
 
+        // ── Navigation buttons ───────────────────────────────────────────
         String[][] navItems = {
                 {"Tableau de bord", "ferme"},
                 {"Zones",           "zones"},
@@ -401,6 +415,7 @@ class MainController {
         VBox.setVgrow(spacer, Priority.ALWAYS);
         sb.getChildren().add(spacer);
 
+        // ── Bottom section (Notifications, AI, Save, etc.) ─────────────────
         VBox bottom = new VBox(6);
         bottom.setStyle("-fx-border-color:rgba(255,255,255,0.08) transparent transparent transparent;-fx-border-width:1 0 0 0;");
         bottom.setPadding(new Insets(12, 16, 12, 16));
@@ -408,8 +423,73 @@ class MainController {
         // Indicateur timer capteurs
         Label lTimer = new Label("⏱ Relevés auto : " + SENSOR_INTERVAL_SECONDS + "s");
         lTimer.setStyle("-fx-text-fill:rgba(255,255,255,0.40);-fx-font-size:10px;-fx-font-family:'Segoe UI',system;");
+        bottom.getChildren().add(lTimer);
 
-        // Bouton Sauvegarder
+        // ── Notifications Bell with Badge ──────────────────────────────────
+        javafx.scene.layout.StackPane bellPane = new javafx.scene.layout.StackPane();
+        bellPane.setMaxWidth(Double.MAX_VALUE);
+
+        Button btnBell = new Button("🔔  Notifications");
+        btnBell.setMaxWidth(Double.MAX_VALUE);
+        btnBell.setStyle(
+                "-fx-background-color:" + COLOR_SIDEBAR_HOVER + ";" +
+                        "-fx-text-fill:rgba(255,255,255,0.85);" +
+                        "-fx-font-size:12px;-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;-fx-cursor:hand;-fx-background-radius:4;");
+        btnBell.setOnMouseEntered(e -> btnBell.setStyle(
+                "-fx-background-color:" + COLOR_ACCENT + ";" +
+                        "-fx-text-fill:#ffffff;-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;-fx-padding:7 12;" +
+                        "-fx-cursor:hand;-fx-background-radius:4;"));
+        btnBell.setOnMouseExited(e -> btnBell.setStyle(
+                "-fx-background-color:" + COLOR_SIDEBAR_HOVER + ";" +
+                        "-fx-text-fill:rgba(255,255,255,0.85);-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;-fx-padding:7 12;" +
+                        "-fx-cursor:hand;-fx-background-radius:4;"));
+        btnBell.setOnAction(e -> toggleNotificationPanel());
+
+        badgeLabel = new Label("0");
+        badgeLabel.setStyle(
+                "-fx-background-color:#e53935;-fx-text-fill:white;" +
+                        "-fx-font-size:9px;-fx-padding:1 4;" +
+                        "-fx-background-radius:8;-fx-font-weight:bold;");
+        badgeLabel.setVisible(false);
+        javafx.scene.layout.StackPane.setAlignment(badgeLabel, javafx.geometry.Pos.TOP_RIGHT);
+        javafx.scene.layout.StackPane.setMargin(badgeLabel, new Insets(2, 2, 0, 0));
+        bellPane.getChildren().addAll(btnBell, badgeLabel);
+        bottom.getChildren().add(bellPane);
+
+        // ── AI button ─────────────────────────────────────────────────────
+        Button btnAi = new Button("🤖  AI");
+        btnAi.setMaxWidth(Double.MAX_VALUE);
+        btnAi.setStyle(
+                "-fx-background-color:" + COLOR_ACCENT + ";" +
+                        "-fx-text-fill:#ffffff;" +
+                        "-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;" +
+                        "-fx-cursor:hand;" +
+                        "-fx-background-radius:4;");
+        btnAi.setOnMouseEntered(e -> btnAi.setStyle(
+                "-fx-background-color:#3d8a5c;" +
+                        "-fx-text-fill:#ffffff;" +
+                        "-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;" +
+                        "-fx-cursor:hand;" +
+                        "-fx-background-radius:4;"));
+        btnAi.setOnMouseExited(e -> btnAi.setStyle(
+                "-fx-background-color:" + COLOR_ACCENT + ";" +
+                        "-fx-text-fill:#ffffff;" +
+                        "-fx-font-size:12px;" +
+                        "-fx-font-family:'Segoe UI',system;" +
+                        "-fx-padding:7 12;" +
+                        "-fx-cursor:hand;" +
+                        "-fx-background-radius:4;"));
+        btnAi.setOnAction(e -> toggleAiChat());
+        bottom.getChildren().add(btnAi);
+
+        // ── Save button ───────────────────────────────────────────────────
         Button btnSave = new Button("💾  Sauvegarder");
         btnSave.setMaxWidth(Double.MAX_VALUE);
         btnSave.setStyle(
@@ -419,8 +499,7 @@ class MainController {
                         "-fx-font-family:'Segoe UI',system;" +
                         "-fx-padding:7 12;" +
                         "-fx-cursor:hand;" +
-                        "-fx-background-radius:4;"
-        );
+                        "-fx-background-radius:4;");
         btnSave.setOnMouseEntered(e -> btnSave.setStyle(
                 "-fx-background-color:" + COLOR_ACCENT + ";" +
                         "-fx-text-fill:#ffffff;" +
@@ -428,8 +507,7 @@ class MainController {
                         "-fx-font-family:'Segoe UI',system;" +
                         "-fx-padding:7 12;" +
                         "-fx-cursor:hand;" +
-                        "-fx-background-radius:4;"
-        ));
+                        "-fx-background-radius:4;"));
         btnSave.setOnMouseExited(e -> btnSave.setStyle(
                 "-fx-background-color:" + COLOR_SIDEBAR_HOVER + ";" +
                         "-fx-text-fill:rgba(255,255,255,0.85);" +
@@ -437,20 +515,31 @@ class MainController {
                         "-fx-font-family:'Segoe UI',system;" +
                         "-fx-padding:7 12;" +
                         "-fx-cursor:hand;" +
-                        "-fx-background-radius:4;"
-        ));
+                        "-fx-background-radius:4;"));
         btnSave.setOnAction(e -> {
             saveToFile();
             info("Ferme sauvegardée dans farm_save.json");
         });
+        bottom.getChildren().add(btnSave);
 
         Label lVersion = new Label("v1.0.0");
         lVersion.setStyle("-fx-text-fill:rgba(255,255,255,0.20);-fx-font-size:10px;-fx-font-family:'Segoe UI',system;");
+        bottom.getChildren().add(lVersion);
 
-        bottom.getChildren().addAll(lTimer, btnSave, lVersion);
         sb.getChildren().add(bottom);
 
         return sb;
+    }
+
+    private void toggleAiChat() {
+        if (aiChatDialog == null) {
+            aiChatDialog = new AiChatDialog(stage, aiService);
+        }
+        if (aiChatDialog.isShowing()) {
+            aiChatDialog.hide();
+        } else {
+            aiChatDialog.show();
+        }
     }
 
     private Button buildNavButton(String label, String icon, String page) {
@@ -974,17 +1063,47 @@ class MainController {
             v.getChildren().add(paChips);
         }
 
-        // Animal list (mini table)
+        // Animal list with delete button column
         if (!ze.getAnimaux().isEmpty()) {
             TableView<Animal> ta = buildStyledTable();
             ta.setMaxHeight(160);
-            ta.getColumns().addAll(
-                    styledCol("ID",       55,  a -> String.valueOf(a.getID())),
-                    styledCol("Espèce",   130, a -> a.getEspece().getName()),
-                    styledCol("Age",      50,  a -> a.age + " ans"),
-                    styledCol("Poids",    70,  a -> String.format("%.1f kg", a.getPoids())),
-                    styledCol("Santé",    110, a -> a.getEtat().name())
-            );
+
+            // Add columns including a delete button column
+            TableColumn<Animal, String> colId = styledCol("ID", 55, a -> String.valueOf(a.getID()));
+            TableColumn<Animal, String> colEspece = styledCol("Espèce", 130, a -> a.getEspece().getName());
+            TableColumn<Animal, String> colAge = styledCol("Age", 50, a -> a.age + " ans");
+            TableColumn<Animal, String> colPoids = styledCol("Poids", 70, a -> String.format("%.1f kg", a.getPoids()));
+            TableColumn<Animal, String> colSante = styledCol("Santé", 110, a -> a.getEtat().name());
+
+            // Delete button column
+            TableColumn<Animal, Void> colDelete = new TableColumn<>("Action");
+            colDelete.setPrefWidth(70);
+            colDelete.setCellFactory(param -> new TableCell<>() {
+                private final Button deleteBtn = new Button("🗑 Suppr");
+                {
+                    deleteBtn.setStyle(STYLE_BTN_GHOST +
+                            "-fx-text-fill:" + COLOR_DANGER_TEXT + ";" +
+                            "-fx-border-color:" + COLOR_DANGER_BORDER + ";" +
+                            "-fx-font-size:10px;" +
+                            "-fx-padding:2 6;");
+                    deleteBtn.setOnAction(e -> {
+                        Animal animal = getTableView().getItems().get(getIndex());
+                        supprimerAnimalDialog(ze, animal);
+                    });
+                }
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(deleteBtn);
+                    }
+                }
+            });
+
+            ta.getColumns().addAll(colId, colEspece, colAge, colPoids, colSante, colDelete);
+
             ta.setRowFactory(tv -> new TableRow<>() {
                 @Override protected void updateItem(Animal a, boolean empty) {
                     super.updateItem(a, empty);
@@ -1008,7 +1127,6 @@ class MainController {
 
         // Actions
         HBox acts = new HBox(8);
-        // Point 6: add animal directly from zone card
         Button bAddAnim = btn("Ajouter un animal", STYLE_BTN_PRIMARY);
         bAddAnim.setOnAction(e -> { ajouterAnimalDialog(ze); showPage("zones"); });
         Button bProg = btn("Programme alimentaire", STYLE_BTN_SECONDARY);
@@ -1017,6 +1135,244 @@ class MainController {
         v.getChildren().add(acts);
 
         return v;
+    }
+
+    // Badge label — kept as a field so we can update it from the listener
+    private Label badgeLabel;
+
+    // Notification panel stage (lazy-created)
+    private Stage notifStage;
+
+    private void onNewNotification(Notification n) {
+        // Update badge
+        long unread = notifService.getUnreadCount();
+        badgeLabel.setText(String.valueOf(unread));
+        badgeLabel.setVisible(unread > 0);
+        // If the panel is open, refresh it
+        if (notifStage != null && notifStage.isShowing()) {
+            refreshNotificationPanel();
+        }
+    }
+
+    private void toggleNotificationPanel() {
+        if (notifStage == null) {
+            notifStage = buildNotificationPanel();
+        }
+        if (notifStage.isShowing()) {
+            notifStage.hide();
+        } else {
+            notifService.markAllRead();
+            badgeLabel.setVisible(false);
+            refreshNotificationPanel();
+            positionNotifPanel();
+            notifStage.show();
+        }
+    }
+
+    private void positionNotifPanel() {
+        notifStage.setX(stage.getX() + 200);
+        notifStage.setY(stage.getY() + 60);
+    }
+
+    /** Container VBox inside the panel — refreshed in place. */
+    private VBox notifListBox;
+
+    private Stage buildNotificationPanel() {
+        Stage s = new Stage(javafx.stage.StageStyle.UNDECORATED);
+        s.initOwner(stage);
+        s.setAlwaysOnTop(true);
+
+        VBox root = new VBox(0);
+        root.setStyle(
+                "-fx-background-color:#ffffff;" +
+                        "-fx-border-color:" + COLOR_CARD_BORDER + ";" +
+                        "-fx-border-width:1;" +
+                        "-fx-background-radius:12;-fx-border-radius:12;");
+        root.setPrefWidth(420);
+        root.setMaxWidth(420);
+
+        // ── Header ──────────────────────────────────────────────────
+        HBox header = new HBox(8);
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        header.setPadding(new Insets(12, 12, 12, 16));
+        header.setStyle(
+                "-fx-background-color:" + COLOR_SIDEBAR_BG + ";" +
+                        "-fx-background-radius:12 12 0 0;");
+
+        Label lTitle = new Label("🔔 Notifications");
+        lTitle.setStyle("-fx-text-fill:#ffffff;-fx-font-size:14px;" +
+                "-fx-font-weight:bold;-fx-font-family:'Segoe UI',system;");
+
+        Region hSpacer = new Region();
+        HBox.setHgrow(hSpacer, Priority.ALWAYS);
+
+        Button btnClear = new Button("Tout effacer");
+        btnClear.setStyle(
+                "-fx-background-color:transparent;-fx-text-fill:rgba(255,255,255,0.7);" +
+                        "-fx-font-size:11px;-fx-cursor:hand;-fx-padding:2 8;");
+        btnClear.setOnAction(e -> {
+            notifService.clearAll();
+            badgeLabel.setVisible(false);
+            refreshNotificationPanel();
+        });
+
+        Button btnClose = new Button("✕");
+        btnClose.setStyle(
+                "-fx-background-color:transparent;-fx-text-fill:rgba(255,255,255,0.7);" +
+                        "-fx-font-size:14px;-fx-cursor:hand;-fx-padding:2 8;");
+        btnClose.setOnAction(e -> s.hide());
+
+        header.getChildren().addAll(lTitle, hSpacer, btnClear, btnClose);
+
+        // Allow dragging
+        header.setOnMousePressed(ev -> {
+            header.setUserData(new double[]{ev.getSceneX(), ev.getSceneY()});
+        });
+        header.setOnMouseDragged(ev -> {
+            double[] off = (double[]) header.getUserData();
+            s.setX(ev.getScreenX() - off[0]);
+            s.setY(ev.getScreenY() - off[1]);
+        });
+
+        // ── Notification list ────────────────────────────────────────
+        notifListBox = new VBox(0);
+        notifListBox.setStyle("-fx-background-color:" + COLOR_PAGE_BG + ";");
+
+        ScrollPane sp = new ScrollPane(notifListBox);
+        sp.setFitToWidth(true);
+        sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        sp.setPrefHeight(480);
+        sp.setMaxHeight(480);
+        sp.setStyle(
+                "-fx-background:" + COLOR_PAGE_BG + ";" +
+                        "-fx-background-color:" + COLOR_PAGE_BG + ";" +
+                        "-fx-border-color:transparent;");
+
+        root.getChildren().addAll(header, sp);
+
+        Scene scene = new Scene(root);
+        scene.setFill(null);
+        s.setScene(scene);
+        return s;
+    }
+
+    private void refreshNotificationPanel() {
+        if (notifListBox == null) return;
+        notifListBox.getChildren().clear();
+
+        List<Notification> all = notifService.getAll(); // newest first
+        if (all.isEmpty()) {
+            Label lEmpty = new Label("Aucune notification.");
+            lEmpty.setPadding(new Insets(24));
+            lEmpty.setStyle("-fx-text-fill:" + COLOR_TEXT_MUTED + ";" +
+                    "-fx-font-size:13px;-fx-font-family:'Segoe UI',system;");
+            notifListBox.getChildren().add(lEmpty);
+            return;
+        }
+
+        boolean first = true;
+        for (Notification n : all) {
+            notifListBox.getChildren().add(buildNotifRow(n, !first));
+            first = false;
+        }
+    }
+
+    private HBox buildNotifRow(Notification n, boolean withTopBorder) {
+        HBox row = new HBox(12);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        row.setPadding(new Insets(10, 14, 10, 14));
+        row.setStyle(withTopBorder
+                ? "-fx-border-color:" + COLOR_CARD_BORDER + " transparent transparent transparent;" +
+                "-fx-border-width:1 0 0 0;"
+                : "");
+
+        // Type indicator strip (left bar)
+        javafx.scene.shape.Rectangle bar = new javafx.scene.shape.Rectangle(4, 40);
+        bar.setArcWidth(4); bar.setArcHeight(4);
+        bar.setFill(javafx.scene.paint.Color.web(notifTypeColor(n.getType())));
+
+        // Body
+        VBox body = new VBox(2);
+        HBox.setHgrow(body, Priority.ALWAYS);
+
+        Label lTitle = new Label(n.getTitle());
+        lTitle.setWrapText(true);
+        lTitle.setMaxWidth(290);
+        lTitle.setStyle("-fx-font-size:12px;-fx-font-weight:bold;" +
+                "-fx-text-fill:" + notifTypeColor(n.getType()) + ";" +
+                "-fx-font-family:'Segoe UI',system;");
+
+        Label lDetail = new Label(n.getDetail());
+        lDetail.setWrapText(true);
+        lDetail.setMaxWidth(290);
+        lDetail.setStyle("-fx-font-size:11px;-fx-text-fill:" + COLOR_TEXT_SECONDARY + ";" +
+                "-fx-font-family:'Segoe UI',system;");
+
+        Label lDate = new Label(n.getCreatedAt().format(
+                java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm:ss")));
+        lDate.setStyle("-fx-font-size:10px;-fx-text-fill:" + COLOR_TEXT_MUTED + ";" +
+                "-fx-font-family:'Segoe UI',system;");
+
+        body.getChildren().addAll(lTitle, lDetail, lDate);
+
+        // Dismiss button
+        Button btnX = new Button("✕");
+        btnX.setStyle(
+                "-fx-background-color:transparent;-fx-text-fill:" + COLOR_TEXT_MUTED + ";" +
+                        "-fx-font-size:11px;-fx-cursor:hand;-fx-padding:0 4;");
+        btnX.setOnAction(e -> {
+            notifService.dismiss(n);
+            refreshNotificationPanel();
+        });
+
+        row.getChildren().addAll(bar, body, btnX);
+
+        // Navigate to source on click (for WARNING and CRITICAL)
+        row.setOnMouseClicked(ev -> {
+            if (ev.getTarget() == btnX) return;
+            if (n.getType() == NotifType.WARNING) {
+                showPage("capteurs");
+                if (notifStage != null) notifStage.hide();
+            } else if (n.getType() == NotifType.CRITICAL) {
+                showPage("alertes");
+                if (notifStage != null) notifStage.hide();
+            }
+        });
+        row.setStyle(row.getStyle() + "-fx-cursor:hand;");
+
+        return row;
+    }
+
+    private String notifTypeColor(NotifType t) {
+        return switch (t) {
+            case WARNING  -> COLOR_WARNING_TEXT;
+            case CRITICAL -> COLOR_DANGER_TEXT;
+            case ACTION   -> COLOR_TEXT_SECONDARY;
+        };
+    }
+
+    /**
+     * Supprime un animal de la zone d'élevage avec confirmation.
+     */
+    private void supprimerAnimalDialog(ZoneElevage ze, Animal animal) {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        styleDialog(confirmation);
+        confirmation.setTitle("Confirmation de suppression");
+        confirmation.setHeaderText("Supprimer l'animal #" + animal.getID() + " ?");
+        confirmation.setContentText("Espèce: " + animal.getEspece().getName() +
+                "\nÂge: " + animal.age + " ans" +
+                "\nPoids: " + animal.getPoids() + " kg" +
+                "\n\nCette action est irréversible.");
+
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            ze.getAnimaux().remove(animal);
+            notifService.logAction("Animal supprimé",
+                    "#" + animal.getID() + " " + animal.getEspece().getName()
+                            + " — Zone : " + ze.getName());
+            showPage(activePage);
+            info("Animal #" + animal.getID() + " a été supprimé.");
+        }
     }
 
     private VBox buildZoneAquaDetails(ZoneAqua za) {
@@ -1069,25 +1425,68 @@ class MainController {
         Label lTitle = new Label("Capteurs (" + z.getCapteurs().size() + ")");
         lTitle.setStyle("-fx-font-size:12px;-fx-font-weight:bold;-fx-text-fill:" + COLOR_TEXT_SECONDARY + ";");
         v.getChildren().add(lTitle);
+
         if (z.getCapteurs().isEmpty()) {
             Label l = new Label("Aucun capteur installé.");
             l.setStyle("-fx-text-fill:" + COLOR_TEXT_MUTED + ";-fx-font-size:12px;");
             v.getChildren().add(l);
         } else {
-            HBox row = new HBox(8);
+            // Use FlowPane for better wrapping of sensor chips
+            FlowPane flow = new FlowPane(8, 6);
+            flow.setStyle("-fx-background-color:transparent;");
+
             for (Capteurs c : z.getCapteurs()) {
-                VBox chip = new VBox(1);
+                HBox chip = new HBox(5);
+                chip.setAlignment(Pos.CENTER_LEFT);
                 chip.setStyle("-fx-background-color:" + COLOR_INFO_BG + ";-fx-border-color:" + COLOR_INFO_BORDER + ";-fx-border-width:1;-fx-padding:5 10;-fx-background-radius:6;-fx-border-radius:6;");
+
                 Label lCode = new Label(c.getCode());
                 lCode.setStyle("-fx-font-size:11px;-fx-font-weight:bold;-fx-text-fill:" + COLOR_INFO_TEXT + ";");
+
                 Label lType = new Label(c.getType().name());
                 lType.setStyle("-fx-font-size:10px;-fx-text-fill:" + COLOR_TEXT_MUTED + ";");
-                chip.getChildren().addAll(lCode, lType);
-                row.getChildren().add(chip);
+
+                // Delete button for sensor
+                Button btnDelete = new Button("✕");
+                btnDelete.setStyle("-fx-background-color:transparent;-fx-text-fill:" + COLOR_DANGER_TEXT + ";-fx-font-size:10px;-fx-cursor:hand;-fx-padding:0 2;");
+                btnDelete.setOnMouseEntered(e -> btnDelete.setStyle("-fx-background-color:" + COLOR_DANGER_BG + ";-fx-text-fill:" + COLOR_DANGER_TEXT + ";-fx-font-size:10px;-fx-cursor:hand;-fx-padding:0 2;-fx-background-radius:4;"));
+                btnDelete.setOnMouseExited(e -> btnDelete.setStyle("-fx-background-color:transparent;-fx-text-fill:" + COLOR_DANGER_TEXT + ";-fx-font-size:10px;-fx-cursor:hand;-fx-padding:0 2;"));
+                btnDelete.setOnAction(e -> supprimerCapteurDialog(z, c));
+
+                chip.getChildren().addAll(lCode, lType, btnDelete);
+                flow.getChildren().add(chip);
             }
-            v.getChildren().add(row);
+            v.getChildren().add(flow);
         }
         return v;
+    }
+
+    /**
+     * Supprime un capteur de la zone avec confirmation.
+     * Gère également la suppression des alertes liées à ce capteur.
+     */
+    private void supprimerCapteurDialog(Zone zone, Capteurs capteur) {
+        Alert confirmation = new Alert(Alert.AlertType.CONFIRMATION);
+        styleDialog(confirmation);
+        confirmation.setTitle("Confirmation de suppression");
+        confirmation.setHeaderText("Supprimer le capteur " + capteur.getCode() + " ?");
+        confirmation.setContentText("Type: " + capteur.getType().name() +
+                "\nZone: " + zone.getName() +
+                "\n\nLes alertes associées à ce capteur seront également supprimées.\nCette action est irréversible.");
+
+        Optional<ButtonType> result = confirmation.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Remove from zone's capteurs list
+            zone.getCapteurs().remove(capteur);
+            // Remove from global capteurs list
+            ferme.getTousLesCapteurs().remove(capteur);
+            // Remove alerts linked to this capteur
+            ferme.getAlertes().removeIf(a -> a.getReleve() != null && a.getReleve().getCapteur().equals(capteur));
+            notifService.logAction("Capteur supprimé",
+                    capteur.getCode() + " (" + capteur.getType() + ") — Zone : " + zone.getName());
+            showPage(activePage);
+            info("Capteur " + capteur.getCode() + " a été supprimé.");
+        }
     }
 
     private VBox buildProductionSubList(Zone z) {
@@ -1242,16 +1641,47 @@ class MainController {
             card.getChildren().add(header);
             card.getChildren().add(buildDivider());
 
+            // Tableau des animaux avec colonne de suppression
             TableView<Animal> ta = buildStyledTable();
             ta.setMaxHeight(200);
-            ta.getColumns().addAll(
-                    styledCol("ID",          60,  a -> String.valueOf(a.getID())),
-                    styledCol("Espèce",      150, a -> a.getEspece().getName()),
-                    styledCol("Type",        100, a -> a.getEspece().getType().name()),
-                    styledCol("Age",         60,  a -> a.age + " ans"),
-                    styledCol("Poids (kg)",  90,  a -> String.format("%.1f", a.getPoids())),
-                    styledCol("Etat santé",  120, a -> a.getEtat().name())
-            );
+
+            // Colonnes existantes
+            TableColumn<Animal, String> colId = styledCol("ID", 60, a -> String.valueOf(a.getID()));
+            TableColumn<Animal, String> colEspece = styledCol("Espèce", 150, a -> a.getEspece().getName());
+            TableColumn<Animal, String> colType = styledCol("Type", 100, a -> a.getEspece().getType().name());
+            TableColumn<Animal, String> colAge = styledCol("Age", 60, a -> a.age + " ans");
+            TableColumn<Animal, String> colPoids = styledCol("Poids (kg)", 90, a -> String.format("%.1f", a.getPoids()));
+            TableColumn<Animal, String> colSante = styledCol("Etat santé", 120, a -> a.getEtat().name());
+
+            // Colonne de suppression
+            TableColumn<Animal, Void> colDelete = new TableColumn<>("Action");
+            colDelete.setPrefWidth(70);
+            colDelete.setCellFactory(param -> new TableCell<>() {
+                private final Button deleteBtn = new Button("🗑 Suppr");
+                {
+                    deleteBtn.setStyle(STYLE_BTN_GHOST +
+                            "-fx-text-fill:" + COLOR_DANGER_TEXT + ";" +
+                            "-fx-border-color:" + COLOR_DANGER_BORDER + ";" +
+                            "-fx-font-size:10px;" +
+                            "-fx-padding:2 6;");
+                    deleteBtn.setOnAction(e -> {
+                        Animal animal = getTableView().getItems().get(getIndex());
+                        supprimerAnimalDialog(ze, animal);
+                    });
+                }
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setGraphic(null);
+                    } else {
+                        setGraphic(deleteBtn);
+                    }
+                }
+            });
+
+            ta.getColumns().addAll(colId, colEspece, colType, colAge, colPoids, colSante, colDelete);
+
             ta.setRowFactory(tv -> new TableRow<>() {
                 @Override protected void updateItem(Animal a, boolean empty) {
                     super.updateItem(a, empty);
@@ -1307,6 +1737,12 @@ class MainController {
     // ─────────────────────────────────────────────────────────────────
 // PAGE CAPTEURS
 // ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
+// PAGE CAPTEURS
+// ─────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────
+// PAGE CAPTEURS
+// ─────────────────────────────────────────────────────────────────
     private VBox buildCapteursPage() {
         VBox page = pageContainer();
         page.getChildren().add(buildPageHeader("Capteurs", "Tableau de bord et historique des relevés"));
@@ -1335,6 +1771,34 @@ class MainController {
                     return c.getHistorique().get(c.getHistorique().size() - 1).getValeurs().toString();
                 })
         );
+
+        // Coloration des lignes du tableau des capteurs selon le dernier relevé
+        tb.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Capteurs capteur, boolean empty) {
+                super.updateItem(capteur, empty);
+                if (capteur == null || empty) {
+                    setStyle("");
+                    return;
+                }
+
+                // Récupérer le dernier relevé
+                if (!capteur.getHistorique().isEmpty()) {
+                    Releve dernier = capteur.getHistorique().get(capteur.getHistorique().size() - 1);
+                    Niveau_gravite niveau = dernier.getNiveauReleve();
+
+                    String bgColor = switch (niveau) {
+                        case CRITIQUE -> COLOR_DANGER_BG;
+                        case AVERTISSEMENT -> COLOR_WARNING_BG;
+                        default -> COLOR_SUCCESS_BG;
+                    };
+                    setStyle("-fx-background-color: " + bgColor + ";");
+                } else {
+                    setStyle("");
+                }
+            }
+        });
+
         tb.getItems().addAll(ferme.getTousLesCapteurs());
         tableCard.getChildren().add(tb);
 
@@ -1380,7 +1844,16 @@ class MainController {
             showHistoriqueReleves(c);
         });
 
-        actBar.getChildren().addAll(bAdd, bReleve, bStatut, bSeuils, bAfficherSeuils, bHist);
+        // Bouton Supprimer capteur
+        Button bDeleteCapteur = btn("Supprimer capteur", STYLE_BTN_GHOST);
+        bDeleteCapteur.setStyle(STYLE_BTN_GHOST + "-fx-text-fill:" + COLOR_DANGER_TEXT + ";-fx-border-color:" + COLOR_DANGER_BORDER + ";");
+        bDeleteCapteur.setOnAction(e -> {
+            Capteurs c = tb.getSelectionModel().getSelectedItem();
+            if (c == null) { info("Sélectionnez un capteur à supprimer."); return; }
+            supprimerCapteurDialog(c.getLocation(), c);
+        });
+
+        actBar.getChildren().addAll(bAdd, bReleve, bStatut, bSeuils, bAfficherSeuils, bHist, bDeleteCapteur);
         page.getChildren().add(actBar);
         page.getChildren().add(tableCard);
 
@@ -1465,6 +1938,27 @@ class MainController {
                 styledCol("Niveau", 100, r -> r.getNiveauReleve().name()),
                 styledCol("Valeurs", 400, r -> r.getValeurs().toString())
         );
+
+        // Coloration des lignes du tableau des relevés selon le niveau
+        tvReleves.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Releve releve, boolean empty) {
+                super.updateItem(releve, empty);
+                if (releve == null || empty) {
+                    setStyle("");
+                    return;
+                }
+
+                Niveau_gravite niveau = releve.getNiveauReleve();
+                String bgColor = switch (niveau) {
+                    case CRITIQUE -> COLOR_DANGER_BG;
+                    case AVERTISSEMENT -> COLOR_WARNING_BG;
+                    default -> COLOR_SUCCESS_BG;
+                };
+                setStyle("-fx-background-color: " + bgColor + ";");
+            }
+        });
+
         tableRelevesContainer.getChildren().add(tvReleves);
         page.getChildren().add(tableRelevesContainer);
 
@@ -2720,6 +3214,28 @@ class MainController {
                 styledCol("Niveau",       120, r -> r.getNiveauReleve().name()),
                 styledCol("Valeurs",      380, r -> r.getValeurs().toString())
         );
+
+        // ===== AJOUT DE LA COLORATION DES LIGNES =====
+        tr.setRowFactory(tv -> new TableRow<>() {
+            @Override
+            protected void updateItem(Releve releve, boolean empty) {
+                super.updateItem(releve, empty);
+                if (releve == null || empty) {
+                    setStyle("");
+                    return;
+                }
+
+                Niveau_gravite niveau = releve.getNiveauReleve();
+                String bgColor = switch (niveau) {
+                    case CRITIQUE -> COLOR_DANGER_BG;
+                    case AVERTISSEMENT -> COLOR_WARNING_BG;
+                    default -> COLOR_SUCCESS_BG;
+                };
+                setStyle("-fx-background-color: " + bgColor + ";");
+            }
+        });
+        // ===== FIN DE L'AJOUT =====
+
         tr.getItems().addAll(c.getHistorique());
 
         Button bFilt = btn("Filtrer", STYLE_BTN_PRIMARY);
@@ -2766,7 +3282,6 @@ class MainController {
             vRoot.getChildren().add(lNoData);
         }
 
-        // Point 7: scrollable window
         ScrollPane sp = new ScrollPane(vRoot);
         sp.setFitToWidth(true);
         sp.setStyle("-fx-background-color:" + COLOR_PAGE_BG + ";-fx-border-color:transparent;-fx-background:" + COLOR_PAGE_BG + ";");
